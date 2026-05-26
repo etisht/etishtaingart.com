@@ -1,0 +1,1373 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>להתחיל להשתמש בבינה מלאכותית — אתי שטיינגרט</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:      #f7f8fc;
+      --surface: #ffffff;
+      --border:  #e8eaf0;
+      --text:    #0f1117;
+      --muted:   #6b7280;
+      --accent:  #4f46e5;
+      --accent-l:#ede9fe;
+      --green:   #059669;
+      --green-l: #d1fae5;
+      --blue:    #0284c7;
+      --blue-l:  #e0f2fe;
+      --amber:   #d97706;
+      --amber-l: #fef3c7;
+      --red:     #dc2626;
+      --red-l:   #fee2e2;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Heebo', sans-serif;
+      direction: rtl;
+      text-align: right;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    /* ─── NAV ─── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      flex-shrink: 0;
+    }
+    .nav-name {
+      font-size: 0.95em;
+      font-weight: 900;
+      color: var(--accent);
+    }
+    .nav-contacts {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .nav-contact {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.82em;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .nav-contact:hover { color: var(--accent); }
+    .nav-contact svg { flex-shrink: 0; }
+    .nav-sep { width: 1px; height: 20px; background: var(--border); }
+    .nav-dots {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .nav-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--border);
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+    }
+    .nav-dot:hover { background: var(--accent); transform: scale(1.4); }
+
+    /* ─── LAYOUT HELPERS ─── */
+    .section-inner {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 88px 40px;
+    }
+    .full-section { max-width: 100%; }
+    .divider { height: 1px; background: var(--border); max-width: 960px; margin: 0 auto; }
+
+    .section-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.76em;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: var(--accent-l);
+      padding: 5px 14px;
+      border-radius: 100px;
+      margin-bottom: 16px;
+    }
+    .section-title {
+      font-size: 2.3em;
+      font-weight: 900;
+      color: var(--text);
+      line-height: 1.15;
+      margin-bottom: 10px;
+    }
+    .section-sub {
+      font-size: 1.05em;
+      color: var(--muted);
+      max-width: 620px;
+      margin-bottom: 40px;
+      line-height: 1.7;
+    }
+    .sec-num {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .sec-num .num {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: var(--accent-l);
+      color: var(--accent);
+      font-size: 0.8em;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .sec-num .line { flex: 1; height: 1px; background: var(--border); }
+
+    /* ─── HERO ─── */
+    #hero {
+      position: relative;
+      min-height: 90vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      overflow: hidden;
+    }
+    #hero .hero-bg {
+      position: absolute;
+      inset: 0;
+      background-image: url("ChatGPT Image May 16, 2026, 08_18_15 PM.png");
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+    #hero .hero-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(160deg,
+        rgba(15,10,30,0.82) 0%,
+        rgba(49,46,129,0.75) 50%,
+        rgba(67,56,202,0.65) 100%);
+    }
+    #hero .hero-content {
+      position: relative;
+      z-index: 2;
+      padding: 60px 40px;
+      max-width: 780px;
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.28);
+      border-radius: 100px;
+      padding: 8px 20px;
+      font-size: 0.88em;
+      color: rgba(255,255,255,0.9);
+      margin-bottom: 28px;
+    }
+    .hero-title {
+      font-size: 3.8em;
+      font-weight: 900;
+      color: #fff;
+      line-height: 1.1;
+      margin-bottom: 18px;
+      text-shadow: 0 2px 16px rgba(0,0,0,0.3);
+    }
+    .hero-sub {
+      font-size: 1.2em;
+      color: rgba(255,255,255,0.75);
+      margin-bottom: 36px;
+      font-weight: 300;
+      line-height: 1.7;
+    }
+    .hero-pills {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .pill {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.22);
+      border-radius: 100px;
+      padding: 7px 16px;
+      font-size: 0.86em;
+      color: rgba(255,255,255,0.85);
+    }
+    .scroll-hint {
+      margin-top: 52px;
+      color: rgba(255,255,255,0.35);
+      font-size: 0.8em;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    .scroll-arrow {
+      width: 22px; height: 22px;
+      border-left: 2px solid rgba(255,255,255,0.3);
+      border-bottom: 2px solid rgba(255,255,255,0.3);
+      transform: rotate(-45deg);
+      animation: bounce 1.8s infinite;
+    }
+    @keyframes bounce {
+      0%,100% { transform: rotate(-45deg) translateY(0); }
+      50%      { transform: rotate(-45deg) translateY(6px); }
+    }
+
+    /* ─── WHY ─── */
+    .why-layout {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 40px;
+      align-items: center;
+    }
+    .why-image {
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.12);
+    }
+    .why-image img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    .why-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .why-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 16px;
+      transition: box-shadow 0.2s, transform 0.2s;
+    }
+    .why-card:hover { box-shadow: 0 6px 20px rgba(79,70,229,0.1); transform: translateY(-2px); }
+    .why-card .icon { font-size: 1.7em; margin-bottom: 8px; }
+    .why-card .label { font-size: 0.92em; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+    .why-card .detail { font-size: 0.78em; color: var(--muted); line-height: 1.5; }
+    .why-card.wide { grid-column: span 2; }
+
+    /* ─── CHATGPT ─── */
+    .action-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+    .action-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: box-shadow 0.2s, transform 0.2s;
+    }
+    .action-card:hover { box-shadow: 0 6px 18px rgba(5,150,105,0.1); transform: translateY(-2px); }
+    .action-card .icon { font-size: 1.6em; flex-shrink: 0; }
+    .action-card .label { font-size: 0.92em; font-weight: 700; }
+    .action-card .desc { font-size: 0.76em; color: var(--muted); }
+
+    /* ─── CHALLENGE ─── */
+    #challenge { background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); }
+    .challenge-box {
+      border: 2px dashed #7dd3fc;
+      border-radius: 20px;
+      padding: 36px 40px;
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .challenge-emoji { font-size: 3em; margin-bottom: 14px; }
+    .challenge-title { font-size: 1.5em; font-weight: 900; color: var(--blue); margin-bottom: 10px; }
+    .challenge-desc { font-size: 1em; color: #0369a1; line-height: 1.7; }
+    .challenge-examples {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 24px;
+    }
+    .challenge-ex {
+      background: var(--surface);
+      border: 1px solid #bae6fd;
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-size: 0.88em;
+      color: #0c4a6e;
+      line-height: 1.5;
+    }
+    .transition-arrow {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 20px 0;
+    }
+    .transition-arrow span {
+      font-size: 1.1em;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .arrow-down {
+      width: 0; height: 0;
+      border-left: 14px solid transparent;
+      border-right: 14px solid transparent;
+      border-top: 18px solid var(--accent);
+      opacity: 0.6;
+    }
+
+    /* ─── INTERACTIVE PROMPT BUILDER ─── */
+    .prompt-builder {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.07);
+    }
+    .pb-header {
+      background: var(--accent);
+      color: #fff;
+      padding: 16px 24px;
+      font-weight: 700;
+      font-size: 0.95em;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .pb-fields { padding: 28px; display: flex; flex-direction: column; gap: 16px; }
+    .pb-field {
+      display: grid;
+      grid-template-columns: 90px 1fr;
+      gap: 12px;
+      align-items: center;
+    }
+    .pb-label {
+      font-size: 0.78em;
+      font-weight: 700;
+      color: var(--accent);
+      background: var(--accent-l);
+      padding: 6px 10px;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .pb-input {
+      width: 100%;
+      font-family: 'Heebo', sans-serif;
+      font-size: 0.95em;
+      color: var(--text);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 14px;
+      direction: rtl;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      background: var(--bg);
+    }
+    .pb-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-l);
+      background: #fff;
+    }
+    .pb-preview-wrap {
+      border-top: 1px solid var(--border);
+      padding: 24px 28px;
+      background: #fafafe;
+    }
+    .pb-preview-label {
+      font-size: 0.76em;
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+    .pb-preview {
+      background: #1e1b4b;
+      color: #c7d2fe;
+      font-size: 0.92em;
+      line-height: 1.8;
+      padding: 18px 22px;
+      border-radius: 12px;
+      min-height: 80px;
+      white-space: pre-wrap;
+      direction: rtl;
+    }
+    .pb-preview .ph { color: rgba(199,210,254,0.3); font-style: italic; }
+    .pb-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+      justify-content: flex-start;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 20px;
+      border-radius: 10px;
+      font-family: 'Heebo', sans-serif;
+      font-size: 0.88em;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+    }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: #4338ca; }
+    .btn-secondary { background: var(--surface); color: var(--text); border: 1.5px solid var(--border); }
+    .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-green { background: var(--green); color: #fff; }
+    .btn-green:hover { background: #047857; }
+
+    /* ─── SURVEY / QR ─── */
+    .survey-layout {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 40px;
+      align-items: start;
+    }
+    .qr-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 24px;
+      text-align: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+      position: sticky;
+      top: 80px;
+    }
+    .qr-card img { width: 160px; height: 160px; border-radius: 12px; margin-bottom: 12px; }
+    .qr-title { font-size: 0.82em; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+    .qr-sub { font-size: 0.72em; color: var(--muted); line-height: 1.5; }
+    .results-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 28px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    }
+    .results-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+    .live-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.78em;
+      font-weight: 700;
+      color: var(--green);
+    }
+    .live-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: pulse 1.4s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.5; transform: scale(0.8); }
+    }
+    .results-stat {
+      font-size: 2em;
+      font-weight: 900;
+      color: var(--accent);
+    }
+    .results-stat-label { font-size: 0.78em; color: var(--muted); }
+    .chart-wrap { margin-top: 16px; }
+    .task-list { margin-top: 20px; display: flex; flex-direction: column; gap: 8px; }
+    .task-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.88em;
+      color: var(--text);
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 8px 12px;
+    }
+    .task-bar-wrap { flex: 1; background: var(--border); border-radius: 100px; height: 6px; }
+    .task-bar { height: 6px; border-radius: 100px; background: var(--accent); transition: width 0.8s; }
+
+    /* ─── NOTEBOOKLM ─── */
+    .steps { display: flex; flex-direction: column; gap: 0; }
+    .step {
+      display: flex;
+      align-items: flex-start;
+      gap: 18px;
+      padding: 22px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .step:last-child { border-bottom: none; }
+    .step-num {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 900;
+      font-size: 0.95em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .step-icon { font-size: 1.6em; flex-shrink: 0; padding-top: 7px; }
+    .step-title { font-size: 1em; font-weight: 700; color: var(--text); }
+    .step-desc { font-size: 0.85em; color: var(--muted); margin-top: 2px; }
+
+    /* ─── LIVE DEMO ─── */
+    #livedemo { background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); }
+    .demo-browser {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    }
+    .demo-toolbar {
+      background: #f1f5f9;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .dot-r { width: 10px; height: 10px; border-radius: 50%; background: #ef4444; }
+    .dot-y { width: 10px; height: 10px; border-radius: 50%; background: #f59e0b; }
+    .dot-g { width: 10px; height: 10px; border-radius: 50%; background: #22c55e; }
+    .demo-url {
+      flex: 1;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 4px 12px;
+      font-size: 0.78em;
+      color: var(--muted);
+      direction: ltr;
+      text-align: left;
+    }
+    .demo-body { padding: 28px; display: grid; grid-template-columns: 220px 1fr; gap: 20px; }
+    .demo-sidebar {
+      border-left: 1px solid var(--border);
+      padding-left: 16px;
+    }
+    .demo-source {
+      background: var(--accent-l);
+      border: 1px solid #c4b5fd;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 0.8em;
+      color: var(--accent);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .demo-main {}
+    .demo-q {
+      background: #ede9fe;
+      border-radius: 10px 10px 10px 0;
+      padding: 12px 16px;
+      font-size: 0.88em;
+      color: #4338ca;
+      font-weight: 600;
+      margin-bottom: 12px;
+      max-width: 80%;
+    }
+    .demo-a {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 0 10px 10px 10px;
+      padding: 14px 16px;
+      font-size: 0.84em;
+      color: var(--text);
+      line-height: 1.7;
+    }
+    .demo-cursor {
+      display: inline-block;
+      width: 2px; height: 14px;
+      background: var(--accent);
+      animation: blink 1s infinite;
+      vertical-align: middle;
+      margin-right: 2px;
+    }
+    @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0;} }
+    .demo-steps-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-top: 28px;
+    }
+    .demo-step-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 14px;
+      text-align: center;
+    }
+    .demo-step-card .icon { font-size: 1.8em; margin-bottom: 8px; }
+    .demo-step-card .num { font-size: 0.7em; color: var(--green); font-weight: 700; margin-bottom: 4px; }
+    .demo-step-card .txt { font-size: 0.82em; font-weight: 600; color: var(--text); }
+
+    /* ─── COMPARE TABLE ─── */
+    .comp-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.05);
+    }
+    table { width: 100%; border-collapse: collapse; direction: rtl; }
+    thead th {
+      padding: 18px 24px;
+      font-size: 1em;
+      font-weight: 900;
+      text-align: center;
+      background: #f1f5f9;
+      color: var(--text);
+    }
+    thead th:first-child { text-align: right; background: transparent; }
+    tbody td {
+      padding: 14px 24px;
+      font-size: 0.92em;
+      color: var(--text);
+      border-top: 1px solid var(--border);
+      text-align: center;
+    }
+    tbody td:first-child { text-align: right; font-weight: 600; }
+    tbody tr:hover td { background: #f8f9ff; }
+    .check { color: var(--green); font-size: 1.2em; }
+    .dash  { color: #d1d5db; }
+
+    /* ─── ZHB ─── */
+    #zhb { background: #0f0f1a; }
+    #zhb .section-title { color: #fff; }
+    #zhb .section-sub { color: rgba(255,255,255,0.5); }
+    #zhb .section-tag { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.7); }
+    #zhb .sec-num .num { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.5); }
+    #zhb .sec-num .line { background: rgba(255,255,255,0.1); }
+    .zhb-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .zhb-card {
+      border-radius: 24px;
+      padding: 0;
+      overflow: hidden;
+      position: relative;
+      min-height: 300px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+    }
+    .zhb-bg {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .zhb-bg-letter {
+      font-size: 11em;
+      font-weight: 900;
+      line-height: 1;
+      opacity: 0.07;
+      color: #fff;
+      user-select: none;
+    }
+    .zhb-content {
+      position: relative;
+      z-index: 2;
+      padding: 28px;
+    }
+    .zhb-icon { font-size: 2.2em; margin-bottom: 10px; }
+    .zhb-letter-sm {
+      font-size: 1em;
+      font-weight: 900;
+      border-radius: 8px;
+      padding: 3px 10px;
+      display: inline-block;
+      margin-bottom: 8px;
+    }
+    .zhb-word { font-size: 1.5em; font-weight: 900; color: #fff; margin-bottom: 8px; }
+    .zhb-desc { font-size: 0.86em; color: rgba(255,255,255,0.72); line-height: 1.6; }
+    .zhb-footer {
+      margin-top: 28px;
+      text-align: center;
+      color: rgba(255,255,255,0.35);
+      font-size: 0.9em;
+    }
+
+    /* ─── PRACTICE ─── */
+    .practice-layout {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    .pcard {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 18px;
+      padding: 28px 20px;
+      text-align: center;
+      transition: all 0.2s;
+    }
+    .pcard:hover { border-color: var(--blue); box-shadow: 0 0 0 4px var(--blue-l); transform: translateY(-2px); }
+    .pcard .icon { font-size: 2.4em; margin-bottom: 12px; }
+    .pcard .num { font-size: 0.72em; font-weight: 700; color: var(--blue); margin-bottom: 6px; }
+    .pcard .text { font-size: 0.92em; font-weight: 700; color: var(--text); line-height: 1.4; }
+    .pcard .desc { font-size: 0.78em; color: var(--muted); margin-top: 6px; }
+
+    /* ─── CTA ─── */
+    #cta {
+      background: linear-gradient(160deg, #0f0f1a 0%, #1e1b4b 45%, #312e81 100%);
+      padding: 100px 40px;
+      text-align: center;
+    }
+    #cta .inner { max-width: 900px; margin: 0 auto; }
+    .cta-name {
+      font-size: 2.8em;
+      font-weight: 900;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+    .cta-tagline {
+      font-size: 1.1em;
+      color: rgba(255,255,255,0.55);
+      margin-bottom: 36px;
+    }
+    .cta-contacts {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 48px;
+    }
+    .cta-contact-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 28px;
+      border-radius: 14px;
+      font-family: 'Heebo', sans-serif;
+      font-size: 1.05em;
+      font-weight: 700;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .cta-btn-wa { background: #25d366; color: #fff; }
+    .cta-btn-wa:hover { background: #1ebe5d; transform: translateY(-2px); }
+    .cta-btn-email { background: rgba(255,255,255,0.1); color: #fff; border: 1.5px solid rgba(255,255,255,0.25); }
+    .cta-btn-email:hover { background: rgba(255,255,255,0.18); transform: translateY(-2px); }
+    .cta-divider {
+      font-size: 0.85em;
+      color: rgba(255,255,255,0.3);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 28px;
+    }
+    .cta-services {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+      margin-bottom: 40px;
+      text-align: right;
+    }
+    .cta-service {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 14px;
+      padding: 18px 22px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: background 0.2s;
+    }
+    .cta-service:hover { background: rgba(255,255,255,0.11); }
+    .cta-service .icon { font-size: 1.8em; flex-shrink: 0; }
+    .cta-service .text { font-size: 0.95em; font-weight: 700; color: #fff; }
+    .cta-service .sub { font-size: 0.8em; color: rgba(255,255,255,0.5); margin-top: 2px; }
+    .cta-quote {
+      font-size: 1.2em;
+      font-weight: 700;
+      color: #a5b4fc;
+      line-height: 1.7;
+    }
+
+    /* ─── FOOTER ─── */
+    footer {
+      padding: 24px 40px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.82em;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    /* ─── TOAST ─── */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: #1e1b4b;
+      color: #fff;
+      padding: 12px 24px;
+      border-radius: 100px;
+      font-size: 0.9em;
+      font-weight: 600;
+      z-index: 9999;
+      opacity: 0;
+      transition: all 0.3s;
+      pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ─── NAV QR ─── */
+    .nav-qr-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    .nav-qr-wrap img {
+      width: 44px;
+      height: 44px;
+      border-radius: 6px;
+      border: 2px solid var(--border);
+      display: block;
+    }
+    .nav-qr-label {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+    .nav-qr-label .scan-text {
+      font-size: 0.7em;
+      font-weight: 700;
+      color: var(--muted);
+    }
+    .nav-qr-label .site-link {
+      font-size: 0.82em;
+      font-weight: 900;
+      color: var(--accent);
+      text-decoration: none;
+      transition: opacity 0.2s;
+    }
+    .nav-qr-label .site-link:hover { opacity: 0.75; }
+  </style>
+</head>
+<body>
+
+<!-- ─── NAV ─── -->
+<nav>
+  <div class="nav-brand">
+    <div class="nav-qr-wrap">
+      <img src="https://api.qrserver.com/v1/create-qr-code/?data=https%3A%2F%2Fetishtaingart.com%2F&size=90x90&margin=3" alt="QR" />
+      <div class="nav-qr-label">
+        <span class="scan-text">📲 סרקו לאתר</span>
+        <a class="site-link" href="https://etishtaingart.com/" target="_blank" rel="noopener">etishtaingart.com</a>
+      </div>
+    </div>
+    <div class="nav-sep"></div>
+    <div class="nav-name">🤖 AI למתחילים</div>
+    <div class="nav-sep"></div>
+    <div class="nav-contacts">
+      <span style="font-size:0.88em; font-weight:700; color:#0f1117;">אתי שטיינגרט</span>
+      <div class="nav-sep"></div>
+      <a class="nav-contact" href="mailto:etishtaingart@gmail.com">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+        etishtaingart@gmail.com
+      </a>
+      <div class="nav-sep"></div>
+      <a class="nav-contact" href="https://wa.me/972502012112" target="_blank">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+        050-2012112
+      </a>
+    </div>
+  </div>
+  <div class="nav-dots">
+    <a href="#why"       class="nav-dot" title="למה זה חשוב?"></a>
+    <a href="#chatgpt"   class="nav-dot" title="ChatGPT"></a>
+    <a href="#challenge" class="nav-dot" title="תרגול ראשוני"></a>
+    <a href="#prompt"    class="nav-dot" title="בונה הפרומפט"></a>
+    <a href="#notebook"  class="nav-dot" title="NotebookLM"></a>
+    <a href="#livedemo"  class="nav-dot" title="דמו חי"></a>
+    <a href="#compare"   class="nav-dot" title="השוואה"></a>
+    <a href="#zhb"       class="nav-dot" title="זה״ב"></a>
+    <a href="#practice"  class="nav-dot" title="תרגול"></a>
+    <a href="#cta"       class="nav-dot" title="יצירת קשר"></a>
+  </div>
+</nav>
+
+<!-- ─── HERO ─── -->
+<section id="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <div class="hero-badge">⏱️ הדרכה · שעה אחת · קהל מתחילים</div>
+    <h1 class="hero-title">להתחיל להשתמש<br/>בבינה מלאכותית</h1>
+    <p class="hero-sub">בלי לפחד. בלי להסתבך. בלי רקע טכנולוגי.<br/>כלים פשוטים לעבודה, למידה ויצירה.</p>
+    <div class="hero-pills">
+      <span class="pill">⚡ חוסך זמן</span>
+      <span class="pill">🚀 עוזר להתחיל</span>
+      <span class="pill">📚 מסייע בלמידה</span>
+      <span class="pill">🙌 מתאים לכולם</span>
+    </div>
+    <div class="scroll-hint">
+      <span>גללו למטה</span>
+      <div class="scroll-arrow"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── WHY ─── -->
+<section id="why" style="padding:0;">
+  <div class="section-inner">
+    <div class="sec-num"><div class="num">1</div><div class="line"></div></div>
+    <div class="why-layout">
+      <div>
+        <div class="section-tag">📍 נקודת פתיחה</div>
+        <h2 class="section-title">למה זה חשוב?</h2>
+        <p class="section-sub">בינה מלאכותית היא לא רק לאנשי טכנולוגיה. כל מי שעובד עם טקסט, חושב, מתכנן — יכול להרוויח ממנה.</p>
+        <div class="why-grid">
+          <div class="why-card">
+            <div class="icon">⚡</div>
+            <div class="label">חוסך זמן</div>
+            <div class="detail">דקות במקום שעות על טקסטים, חיפושים ותכנון</div>
+          </div>
+          <div class="why-card">
+            <div class="icon">🚀</div>
+            <div class="label">עוזר להתחיל</div>
+            <div class="detail">גוסס מול דף ריק? AI נותן לך את הדחיפה הראשונה</div>
+          </div>
+          <div class="why-card">
+            <div class="icon">✍️</div>
+            <div class="label">משפר ניסוח</div>
+            <div class="detail">מייל, דוח, הצעה — בעברית ובאנגלית</div>
+          </div>
+          <div class="why-card">
+            <div class="icon">📚</div>
+            <div class="label">מסייע בלמידה</div>
+            <div class="detail">מסביר, מסכם ושואל שאלות חזרה</div>
+          </div>
+          <div class="why-card wide">
+            <div class="icon">🙌</div>
+            <div class="label">מתאים לכולם</div>
+            <div class="detail">לא צריך ידע טכנולוגי — רק לדעת לבקש</div>
+          </div>
+        </div>
+      </div>
+      <div class="why-image">
+        <img src="ChatGPT Image May 16, 2026, 08_14_48 PM (2).png" alt="AI כלים" />
+      </div>
+    </div>
+  </div>
+</section>
+<div class="divider"></div>
+
+<!-- ─── CHATGPT ─── -->
+<section id="chatgpt" style="padding:0;">
+  <div class="section-inner">
+    <div class="sec-num"><div class="num">2</div><div class="line"></div></div>
+    <div class="section-tag" style="background:#d1fae5; color:#059669;">🟢 ChatGPT</div>
+    <h2 class="section-title">מה אפשר לעשות עם ChatGPT?</h2>
+    <p class="section-sub">פתחו את chatgpt.com, הקלידו בקשה בעברית — וקבלו תוצאה מיידית.</p>
+    <div class="action-grid">
+      <div class="action-card"><span class="icon">✍️</span><div><div class="label">לכתוב</div><div class="desc">מיילים, דוחות, הצעות</div></div></div>
+      <div class="action-card"><span class="icon">📋</span><div><div class="label">לסכם</div><div class="desc">מסמכים ארוכים בשניות</div></div></div>
+      <div class="action-card"><span class="icon">📅</span><div><div class="label">לתכנן</div><div class="desc">לו"ז, אג'נדה, תוכנית</div></div></div>
+      <div class="action-card"><span class="icon">🔍</span><div><div class="label">להסביר</div><div class="desc">כל מושג בשפה פשוטה</div></div></div>
+      <div class="action-card"><span class="icon">🌍</span><div><div class="label">לתרגם</div><div class="desc">בין שפות ובין סגנונות</div></div></div>
+      <div class="action-card"><span class="icon">💡</span><div><div class="label">לייצר רעיונות</div><div class="desc">סיעור מוחות מיידי</div></div></div>
+      <div class="action-card"><span class="icon">📊</span><div><div class="label">לבנות טבלאות</div><div class="desc">נתונים מסודרים בשניות</div></div></div>
+      <div class="action-card"><span class="icon">🎯</span><div><div class="label">להכין תוכן</div><div class="desc">פוסטים, מצגות, ניוזלטר</div></div></div>
+    </div>
+  </div>
+</section>
+<div class="divider"></div>
+
+<!-- ─── CHALLENGE ─── -->
+<section id="challenge" style="padding:0;">
+  <div class="section-inner" style="padding-top:80px; padding-bottom:80px;">
+    <div class="sec-num"><div class="num" style="background:#e0f2fe; color:#0284c7;">3</div><div class="line"></div></div>
+    <div class="section-tag" style="background:#e0f2fe; color:#0284c7;">🎯 שלב 1 — נסו עכשיו</div>
+    <h2 class="section-title">בקשו מהצ׳אט לבצע משימה</h2>
+    <p class="section-sub">לפני שמגלים את הסוד — נסו בעצמכם. פתחו את ChatGPT ובקשו ממנו לבצע משימה כלשהי. שימו לב לתוצאות.</p>
+    <div class="challenge-box">
+      <div class="challenge-emoji">💬</div>
+      <div class="challenge-title">בחרו משימה, בקשו מהצ׳אט — וראו מה קורה</div>
+      <div class="challenge-desc">סתם כתבו מה אתם רוצים, בלי הנחיות מיוחדות.</div>
+      <div class="challenge-examples">
+        <div class="challenge-ex">📧 "תכתוב לי מייל ללקוח שמתאחרת בהגשה"</div>
+        <div class="challenge-ex">📋 "תסכם לי את הפגישה האחרונה שלנו"</div>
+        <div class="challenge-ex">💡 "תן לי רעיונות לתוכן לאינסטגרם"</div>
+      </div>
+    </div>
+    <div class="transition-arrow">
+      <div class="arrow-down"></div>
+      <span>עכשיו בואו נשפר את התוצאות ע"י הסוד:</span>
+      <div class="arrow-down"></div>
+    </div>
+  </div>
+</section>
+<div class="divider"></div>
+
+<!-- ─── INTERACTIVE PROMPT BUILDER ─── -->
+<section id="prompt" style="padding:0;">
+  <div class="section-inner">
+    <div class="sec-num"><div class="num">4</div><div class="line"></div></div>
+    <div class="section-tag">🧠 הסוד</div>
+    <h2 class="section-title">בנו את הפרומפט שלכם</h2>
+    <p class="section-sub">מלאו את השדות — והפרומפט המושלם יבנה לכם אוטומטית. אחר כך פשוט העתיקו לצ׳אט.</p>
+    <div class="prompt-builder">
+      <div class="pb-header">✍️ בונה הפרומפט האינטראקטיבי</div>
+      <div class="pb-fields">
+        <div class="pb-field">
+          <div class="pb-label">🎭 תפקיד</div>
+          <input class="pb-input" id="pb-role" type="text" placeholder='לדוג׳: "אתה מומחה לשיווק דיגיטלי"' oninput="buildPrompt()" />
+        </div>
+        <div class="pb-field">
+          <div class="pb-label">📝 משימה</div>
+          <input class="pb-input" id="pb-task" type="text" placeholder='לדוג׳: "עזור לי לכתוב פוסט לאינסטגרם"' oninput="buildPrompt()" />
+        </div>
+        <div class="pb-field">
+          <div class="pb-label">🌐 הקשר</div>
+          <input class="pb-input" id="pb-context" type="text" placeholder='לדוג׳: "הרקע הוא השקת קורס תזונה לנשים"' oninput="buildPrompt()" />
+        </div>
+        <div class="pb-field">
+          <div class="pb-label">📐 פורמט</div>
+          <input class="pb-input" id="pb-format" type="text" placeholder='לדוג׳: "3 גרסאות קצרות, עד 3 שורות כל אחת"' oninput="buildPrompt()" />
+        </div>
+        <div class="pb-field">
+          <div class="pb-label">🎨 טון</div>
+          <input class="pb-input" id="pb-tone" type="text" placeholder='לדוג׳: "חם, אישי ועם קריאה לפעולה"' oninput="buildPrompt()" />
+        </div>
+      </div>
+      <div class="pb-preview-wrap">
+        <div class="pb-preview-label">📋 הפרומפט שלכם</div>
+        <div class="pb-preview" id="pb-output"><span class="ph">התחילו למלא את השדות למעלה — הפרומפט ייבנה כאן...</span></div>
+        <div class="pb-actions">
+          <button class="btn btn-primary" onclick="copyPrompt()">📋 העתק פרומפט</button>
+          <button class="btn btn-green" onclick="openChatGPT()">🚀 פתח ב-ChatGPT</button>
+          <button class="btn btn-secondary" onclick="clearPrompt()">🗑️ נקה הכל</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<div class="divider"></div>
+
+
+<!-- ─── NOTEBOOKLM ─── -->
+<section id="notebook" style="padding:0;">
+  <div class="section-inner">
+    <div class="sec-num"><div class="num">5</div><div class="line"></div></div>
+    <div class="section-tag" style="background:#e0f2fe; color:#0284c7;">🔵 NotebookLM</div>
+    <h2 class="section-title">NotebookLM — AI שלומד מהחומרים שלכם</h2>
+    <p class="section-sub">שלא כמו ChatGPT, NotebookLM עובד רק עם מה שאתם מעלים אליו — ללא "המצאות".</p>
+    <div style="background:#e0f2fe; border:1px solid #bae6fd; border-radius:14px; padding:16px 22px; margin-bottom:32px; display:flex; gap:12px; align-items:flex-start;">
+      <span style="font-size:1.4em;">💡</span>
+      <div style="font-size:0.9em; color:#0c4a6e; line-height:1.6;">מתאים במיוחד לסטודנטים, מרצים, חוקרים — כל מי שצריך להבין חומר לעומק ולשאול עליו שאלות.</div>
+    </div>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><div class="step-icon">📤</div><div><div class="step-title">מעלים חומר</div><div class="step-desc">מצגת, מאמר, קובץ PDF, קישור לאתר</div></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-icon">❓</div><div><div class="step-title">שואלים שאלות</div><div class="step-desc">בשפה טבעית, בדיוק כמו שהייתם שואלים חבר</div></div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-icon">📝</div><div><div class="step-title">מקבלים סיכומים</div><div class="step-desc">עם הפניה מדויקת לעמוד ולמקור</div></div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-icon">🔄</div><div><div class="step-title">יוצרים שאלות חזרה</div><div class="step-desc">לבדיקה עצמית ולחזרה לפני בחינה</div></div></div>
+      <div class="step"><div class="step-num">5</div><div class="step-icon">🎓</div><div><div class="step-title">לומדים לעומק</div><div class="step-desc">מבוסס אך ורק על המקורות שהעליתם</div></div></div>
+    </div>
+  </div>
+</section>
+<div class="divider"></div>
+
+<!-- ─── LIVE DEMO ─── -->
+<section id="livedemo" style="padding:0; background:#f8fafc;">
+  <div class="section-inner">
+    <div class="sec-num"><div class="num" style="background:#d1fae5; color:#059669;">6</div><div class="line"></div></div>
+    <div class="section-tag" style="background:#d1fae5; color:#059669;">🟢 דמו חי</div>
+    <h2 class="section-title">NotebookLM — כך זה עובד</h2>
+    <p class="section-sub">מעלים חומר, שואלים שאלה, מקבלים תשובה מדויקת עם הפניה למקור.</p>
+
+    <!-- Flow steps -->
+    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:0; margin-bottom:40px; position:relative;">
+      <!-- connector line -->
+      <div style="position:absolute; top:36px; right:12.5%; left:12.5%; height:2px; background:linear-gradient(90deg,#6ee7b7,#34d399,#059669); z-index:0;"></div>
+      <div style="text-align:center; position:relative; z-index:1; padding:0 8px;">
+        <div style="width:72px;height:72px;background:#d1fae5;border:3px solid #34d399;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.9em;margin:0 auto 14px;">📁</div>
+        <div style="font-size:0.78em;font-weight:700;color:#059669;margin-bottom:4px;">שלב 1</div>
+        <div style="font-size:0.92em;font-weight:900;color:#0f1117;margin-bottom:4px;">מעלים חומר</div>
+        <div style="font-size:0.76em;color:var(--muted);">PDF, מצגת, קישור</div>
+      </div>
+      <div style="text-align:center; position:relative; z-index:1; padding:0 8px;">
+        <div style="width:72px;height:72px;background:#ede9fe;border:3px solid #a78bfa;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.9em;margin:0 auto 14px;">❓</div>
+        <div style="font-size:0.78em;font-weight:700;color:#7c3aed;margin-bottom:4px;">שלב 2</div>
+        <div style="font-size:0.92em;font-weight:900;color:#0f1117;margin-bottom:4px;">שואלים שאלה</div>
+        <div style="font-size:0.76em;color:var(--muted);">בשפה טבעית</div>
+      </div>
+      <div style="text-align:center; position:relative; z-index:1; padding:0 8px;">
+        <div style="width:72px;height:72px;background:#e0f2fe;border:3px solid #38bdf8;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.9em;margin:0 auto 14px;">💬</div>
+        <div style="font-size:0.78em;font-weight:700;color:#0284c7;margin-bottom:4px;">שלב 3</div>
+        <div style="font-size:0.92em;font-weight:900;color:#0f1117;margin-bottom:4px;">תשובה מדויקת</div>
+        <div style="font-size:0.76em;color:var(--muted);">עם מקור מדויק</div>
+      </div>
+      <div style="text-align:center; position:relative; z-index:1; padding:0 8px;">
+        <div style="width:72px;height:72px;background:#fef3c7;border:3px solid #fbbf24;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.9em;margin:0 auto 14px;">🔖</div>
+        <div style="font-size:0.78em;font-weight:700;color:#d97706;margin-bottom:4px;">שלב 4</div>
+        <div style="font-size:0.92em;font-weight:900;color:#0f1117;margin-bottom:4px;">בדיקת המקור</div>
+        <div style="font-size:0.76em;color:var(--muted);">עמוד + ציטוט מדויק</div>
+      </div>
+    </div>
+
+    <!-- Simulated conversation -->
+    <div style="display:grid; grid-template-columns:200px 1fr; gap:20px; align-items:start;">
+      <!-- Sources panel -->
+      <div style="background:#fff; border:1px solid var(--border); border-radius:18px; padding:20px; box-shadow:0 2px 12px rgba(0,0,0,0.05);">
+        <div style="font-size:0.72em;font-weight:700;color:var(--muted);letter-spacing:0.07em;text-transform:uppercase;margin-bottom:14px;">📂 מקורות</div>
+        <div style="background:#ede9fe;border-radius:10px;padding:10px 12px;font-size:0.82em;font-weight:600;color:#4f46e5;margin-bottom:8px;display:flex;align-items:center;gap:8px;"><span>📄</span> מצגת ההדרכה.pdf</div>
+        <div style="background:#d1fae5;border-radius:10px;padding:10px 12px;font-size:0.82em;font-weight:600;color:#059669;margin-bottom:14px;display:flex;align-items:center;gap:8px;"><span>📊</span> דוח שנתי 2024.pdf</div>
+        <div style="font-size:0.72em;color:var(--muted);line-height:1.6;border-top:1px solid var(--border);padding-top:12px;">
+          NotebookLM עובד <strong style="color:var(--text);">רק</strong> עם המסמכים שהעליתם — לא ממציא.
+        </div>
+      </div>
+
+      <!-- Chat -->
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <!-- Q1 -->
+        <div style="align-self:flex-end;max-width:75%;">
+          <div style="background:#4f46e5;color:#fff;border-radius:18px 18px 4px 18px;padding:14px 18px;font-size:0.92em;font-weight:600;line-height:1.5;">
+            מה הנושאים העיקריים בדוח השנתי?
+          </div>
+        </div>
+        <!-- A1 -->
+        <div style="align-self:flex-start;max-width:88%;">
+          <div style="background:#fff;border:1px solid var(--border);border-radius:4px 18px 18px 18px;padding:16px 20px;font-size:0.88em;line-height:1.7;box-shadow:0 2px 10px rgba(0,0,0,0.05);">
+            על פי הדוח שהעליתם, הנושאים המרכזיים:<br/>
+            <span style="display:block;margin-top:8px;"><strong style="color:#059669;">① צמיחה של 34%</strong> בהכנסות לעומת 2023</span>
+            <span style="display:block;"><strong style="color:#059669;">② כניסה לשוק אירופה</strong> עם שני שותפים</span>
+            <span style="display:block;margin-bottom:8px;"><strong style="color:#059669;">③ השקת מוצר חדש</strong> ברבעון שלישי</span>
+            <span style="font-size:0.8em;background:#fef3c7;border-radius:6px;padding:3px 8px;color:#92400e;">📌 מקור: עמוד 3, 7, 12 בדוח</span>
+          </div>
+        </div>
+        <!-- Q2 -->
+        <div style="align-self:flex-end;max-width:75%;">
+          <div style="background:#4f46e5;color:#fff;border-radius:18px 18px 4px 18px;padding:14px 18px;font-size:0.92em;font-weight:600;line-height:1.5;">
+            צור לי 3 שאלות לחזרה על החומר
+          </div>
+        </div>
+        <!-- A2 -->
+        <div style="align-self:flex-start;max-width:88%;">
+          <div style="background:#fff;border:1px solid var(--border);border-radius:4px 18px 18px 18px;padding:16px 20px;font-size:0.88em;line-height:1.8;box-shadow:0 2px 10px rgba(0,0,0,0.05);">
+            <strong>שאלות חזרה:</strong><br/>
+            <span style="display:block;">1. מהו אחוז הצמיחה בהכנסות ב-2024?</span>
+            <span style="display:block;">2. לאיזה שוק חדש נכנסה החברה?</span>
+            <span style="display:block;">3. באיזה רבעון הושק המוצר החדש?</span>
+            <span style="font-size:0.8em;background:#fef3c7;border-radius:6px;padding:3px 8px;color:#92400e;">📌 מקור: עמוד 3, 9</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<div class="divider"></div>
+
+<!-- ─── COMPARE ─── -->
+<section id="compare" style="padding:0;">
+  <div class="section-inner">
+    <div class="sec-num"><div class="num">7</div><div class="line"></div></div>
+    <div class="section-tag">📊 השוואה</div>
+    <h2 class="section-title">מתי להשתמש במה?</h2>
+    <p class="section-sub">שני כלים משלימים — כל אחד מצטיין במשהו אחר.</p>
+    <div class="comp-wrap">
+      <table>
+        <thead>
+          <tr><th>הצורך</th><th>🟣 ChatGPT</th><th>🔵 NotebookLM</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>לנסח מייל / טקסט</td><td><span class="check">✓</span></td><td><span class="dash">—</span></td></tr>
+          <tr><td>ליצור רעיונות</td><td><span class="check">✓</span></td><td><span class="dash">—</span></td></tr>
+          <tr><td>לסכם מסמך שהעליתי</td><td><span class="dash">—</span></td><td><span class="check">✓</span></td></tr>
+          <tr><td>ללמוד ממאמר / מצגת</td><td><span class="dash">—</span></td><td><span class="check">✓</span></td></tr>
+          <tr><td>לבנות תוכנית / תוכן</td><td><span class="check">✓</span></td><td><span class="dash">—</span></td></tr>
+          <tr><td>להבין חומר לימודי</td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+<div class="divider"></div>
+
+<!-- ─── ZHB ─── -->
+<section id="zhb" style="padding:0;">
+  <div class="section-inner">
+    <div class="sec-num"><div class="num" style="background:rgba(255,255,255,0.08); color:rgba(255,255,255,0.5);">8</div><div class="line" style="background:rgba(255,255,255,0.1);"></div></div>
+    <div class="section-tag" style="background:rgba(255,255,255,0.08); color:rgba(255,255,255,0.7);">🔐 שימוש בטוח</div>
+    <h2 class="section-title" style="color:#fff;">כללי זה״ב</h2>
+    <p class="section-sub" style="color:rgba(255,255,255,0.5);">שלושה כללים. שלוש שניות לזכור. שימוש בטוח לכל החיים.</p>
+    <div class="zhb-grid">
+      <div class="zhb-card" style="background: linear-gradient(145deg, #1a0a0a, #3b0d0d);">
+        <div class="zhb-bg"><div class="zhb-bg-letter">ז</div></div>
+        <div class="zhb-content">
+          <div class="zhb-icon">🚨</div>
+          <div class="zhb-letter-sm" style="background:rgba(239,68,68,0.2); color:#f87171;">ז — זהירות</div>
+          <div class="zhb-word">זהירות עם מידע רגיש</div>
+          <div class="zhb-desc">לא להזין סיסמאות, פרטי לקוחות, מידע רפואי או כל נתון שאין לכם רשות לשתף</div>
+        </div>
+      </div>
+      <div class="zhb-card" style="background: linear-gradient(145deg, #1a1400, #3b2e00);">
+        <div class="zhb-bg"><div class="zhb-bg-letter">ה</div></div>
+        <div class="zhb-content">
+          <div class="zhb-icon">🎯</div>
+          <div class="zhb-letter-sm" style="background:rgba(234,179,8,0.2); color:#fbbf24;">ה — הקשר</div>
+          <div class="zhb-word">הקשר מדויק = תשובה טובה</div>
+          <div class="zhb-desc">ככל שתיתנו הקשר ברור יותר — לאיזה קהל, מה המטרה, מה הרקע — כך התשובה תהיה שימושית יותר</div>
+        </div>
+      </div>
+      <div class="zhb-card" style="background: linear-gradient(145deg, #001a0a, #003b18);">
+        <div class="zhb-bg"><div class="zhb-bg-letter">ב</div></div>
+        <div class="zhb-content">
+          <div class="zhb-icon">🔍</div>
+          <div class="zhb-letter-sm" style="background:rgba(34,197,94,0.2); color:#4ade80;">ב — בדיקה</div>
+          <div class="zhb-word">תמיד לבדוק לפני שימוש</div>
+          <div class="zhb-desc">AI יכול לטעות ולהמציא עובדות. בדקו כל מידע חשוב לפני שמשתמשים בו או מפיצים אותו</div>
+        </div>
+      </div>
+    </div>
+    <div class="zhb-footer">AI הוא עוזר חכם — לא אורקל. אתם הבוסים 💪</div>
+  </div>
+</section>
+<div class="divider" style="background:rgba(255,255,255,0.06);"></div>
+
+<!-- ─── PRACTICE ─── -->
+<section id="practice" style="padding:0;">
+  <div class="section-inner">
+    <div class="sec-num"><div class="num" style="background:#e0f2fe; color:#0284c7;">9</div><div class="line"></div></div>
+    <div class="section-tag" style="background:#e0f2fe; color:#0284c7;">🔵 תרגול NotebookLM</div>
+    <h2 class="section-title">עכשיו תורכם</h2>
+    <p class="section-sub">פתחו את <strong>notebooklm.google.com</strong>, העלו קובץ — וצרו כלי למידה ראשוני בשלושה שלבים פשוטים.</p>
+    <div class="practice-layout">
+      <div class="pcard">
+        <div class="icon">📤</div>
+        <div class="num">שלב 1</div>
+        <div class="text">העלו קובץ</div>
+        <div class="desc">מצגת, מאמר, PDF שמעניין אתכם</div>
+      </div>
+      <div class="pcard">
+        <div class="icon">❓</div>
+        <div class="num">שלב 2</div>
+        <div class="text">שאלו 3 שאלות</div>
+        <div class="desc">על תוכן המסמך, בשפה פשוטה</div>
+      </div>
+      <div class="pcard">
+        <div class="icon">📝</div>
+        <div class="num">שלב 3</div>
+        <div class="text">בקשו סיכום + שאלות לחזרה</div>
+        <div class="desc">בקשו מ-NotebookLM ליצור שאלות חזרה על החומר</div>
+      </div>
+    </div>
+    <div style="margin-top:24px; background:#f0f9ff; border:1px solid #bae6fd; border-radius:14px; padding:18px 24px; font-size:0.9em; color:#0c4a6e; line-height:1.7;">
+      💡 <strong>טיפ:</strong> אחרי שהעליתם את הקובץ, נסו לבקש: <em>"צור לי 5 שאלות לחזרה על החומר"</em> — ותקבלו כלי למידה מוכן תוך שניות.
+    </div>
+  </div>
+</section>
+
+<!-- ─── CTA ─── -->
+<section id="cta" style="padding:0; background:#000; display:flex; align-items:center; justify-content:center; min-height:100vh;">
+  <img src="ChatGPT Image May 16, 2026, 09_01_15 PM.png" alt="בואו נמשיך את הדרך יחד" style="width:100%; height:100vh; object-fit:cover; display:block;">
+</section>
+
+<footer>
+  כל הזכויות שמורות · אתי שטיינגרט
+</footer>
+
+<div class="toast" id="toast">✅ הפרומפט הועתק!</div>
+
+<script>
+  /* ─── PROMPT BUILDER ─── */
+  function buildPrompt() {
+    const role    = document.getElementById('pb-role').value.trim();
+    const task    = document.getElementById('pb-task').value.trim();
+    const context = document.getElementById('pb-context').value.trim();
+    const format  = document.getElementById('pb-format').value.trim();
+    const tone    = document.getElementById('pb-tone').value.trim();
+    const out     = document.getElementById('pb-output');
+    const empty   = !role && !task && !context && !format && !tone;
+    if (empty) {
+      out.innerHTML = '<span class="ph">התחילו למלא את השדות למעלה — הפרומפט ייבנה כאן...</span>';
+      return;
+    }
+    let lines = [];
+    if (role)    lines.push('🎭 ' + role);
+    if (task)    lines.push('📝 ' + task);
+    if (context) lines.push('🌐 ' + context);
+    if (format)  lines.push('📐 ' + format);
+    if (tone)    lines.push('🎨 כתוב בטון: ' + tone);
+    out.textContent = lines.join('\n');
+  }
+
+  function copyPrompt() {
+    const text = document.getElementById('pb-output').textContent;
+    if (!text || text.includes('התחילו למלא')) return;
+    navigator.clipboard.writeText(text).then(() => showToast('✅ הפרומפט הועתק!'));
+  }
+
+  function openChatGPT() {
+    const text = document.getElementById('pb-output').textContent;
+    if (!text || text.includes('התחילו למלא')) { showToast('⚠️ מלאו קודם את השדות'); return; }
+    navigator.clipboard.writeText(text).then(() => {
+      showToast('📋 הועתק! פותח ChatGPT...');
+      setTimeout(() => window.open('https://chatgpt.com', '_blank'), 800);
+    });
+  }
+
+  function clearPrompt() {
+    ['pb-role','pb-task','pb-context','pb-format','pb-tone'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    buildPrompt();
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+
+
+</script>
+</body>
+</html>

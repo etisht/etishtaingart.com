@@ -1,0 +1,213 @@
+"use client"
+
+import { useState } from "react"
+import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
+import { useForm } from "react-hook-form"
+import { ConfirmDialog } from "@/components/shared/confirm-dialog"
+import { formatDate, formatCurrency } from "@/lib/utils"
+import { COST_TYPE_LABELS, CURRENCY_OPTIONS } from "@/lib/constants"
+import { Plus, Trash2, Check } from "lucide-react"
+import type { Cost } from "@/generated/prisma/client"
+import type { ProjectFinancials } from "@/lib/calculations"
+
+interface TabCostsProps {
+  projectId: string
+  costs: Cost[]
+  financials: ProjectFinancials
+  currency: string
+}
+
+export function TabCosts({ projectId, costs: initial, financials, currency }: TabCostsProps) {
+  const [costs, setCosts] = useState(initial)
+  const [open, setOpen] = useState(false)
+  const [loading, setLoading] = useState(false)
+
+  const form = useForm({
+    defaultValues: {
+      costType: "DEVELOPMENT", description: "", vendor: "",
+      amount: "", currency: currency, date: "",
+      isPaid: false, paymentMethod: "", invoiceLink: "", notes: "",
+    },
+  })
+
+  const onSubmit = async (values: ReturnType<typeof form.getValues>) => {
+    setLoading(true)
+    const res = await fetch(`/api/projects/${projectId}/costs`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...values, amount: Number(values.amount) }),
+    })
+    const created: Cost = await res.json()
+    setCosts((prev) => [created, ...prev])
+    setOpen(false)
+    setLoading(false)
+  }
+
+  const handleDelete = async (id: string) => {
+    await fetch(`/api/projects/${projectId}/costs/${id}`, { method: "DELETE" }).catch(() => {})
+    setCosts((prev) => prev.filter((c) => c.id !== id))
+  }
+
+  const grouped = Object.entries(COST_TYPE_LABELS).map(([key, label]) => ({
+    key, label,
+    items: costs.filter((c) => c.costType === key),
+    total: costs.filter((c) => c.costType === key).reduce((s, c) => s + Number(c.amount), 0),
+  })).filter((g) => g.items.length > 0)
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-3 gap-3">
+        <Card className="p-4 text-center">
+          <p className="text-xs text-muted-foreground">סה״כ עלויות</p>
+          <p className="text-xl font-bold text-red-600 mt-1">{formatCurrency(financials.totalCosts, currency)}</p>
+        </Card>
+        <Card className="p-4 text-center">
+          <p className="text-xs text-muted-foreground">רווח צפוי</p>
+          <p className={`text-xl font-bold mt-1 ${financials.expectedProfit >= 0 ? "text-green-600" : "text-red-600"}`}>
+            {formatCurrency(financials.expectedProfit, currency)}
+          </p>
+        </Card>
+        <Card className="p-4 text-center">
+          <p className="text-xs text-muted-foreground">אחוז רווחיות</p>
+          <p className={`text-xl font-bold mt-1 ${financials.profitMargin >= 0 ? "text-green-600" : "text-red-600"}`}>
+            {financials.profitMargin.toFixed(0)}%
+          </p>
+        </Card>
+      </div>
+
+      <div className="flex justify-between items-center">
+        <h3 className="font-semibold">עלויות</h3>
+        <Button size="sm" onClick={() => setOpen(true)}>
+          <Plus className="h-3.5 w-3.5 ml-1.5" />
+          הוסף עלות
+        </Button>
+      </div>
+
+      {costs.length === 0 ? (
+        <Card><CardContent className="py-12 text-center text-muted-foreground text-sm">אין עלויות עדיין</CardContent></Card>
+      ) : (
+        <div className="space-y-4">
+          {grouped.map(({ key, label, items, total }) => (
+            <Card key={key}>
+              <div className="px-4 py-2 bg-slate-50 border-b flex justify-between items-center">
+                <span className="text-sm font-semibold">{label}</span>
+                <span className="text-sm font-bold">{formatCurrency(total, currency)}</span>
+              </div>
+              <CardContent className="p-0">
+                {items.map((c) => (
+                  <div key={c.id} className="flex items-center justify-between px-4 py-3 border-b last:border-0">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium">{formatCurrency(Number(c.amount), c.currency)}</p>
+                        {c.isPaid ? (
+                          <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">שולם</span>
+                        ) : (
+                          <span className="text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">לא שולם</span>
+                        )}
+                      </div>
+                      {c.description && <p className="text-xs text-muted-foreground">{c.description}</p>}
+                      {c.vendor && <p className="text-xs text-muted-foreground">ספק: {c.vendor}</p>}
+                      {c.date && <p className="text-xs text-muted-foreground">{formatDate(c.date)}</p>}
+                    </div>
+                    <ConfirmDialog
+                      trigger={
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      }
+                      onConfirm={() => handleDelete(c.id)}
+                    />
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-md" dir="rtl">
+          <DialogHeader><DialogTitle>עלות חדשה</DialogTitle></DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
+              <FormField control={form.control} name="costType" render={({ field }) => (
+                <FormItem><FormLabel>סוג עלות *</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      {Object.entries(COST_TYPE_LABELS).map(([v, l]) => (
+                        <SelectItem key={v} value={v}>{l}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormItem>
+              )} />
+              <div className="grid grid-cols-3 gap-3">
+                <div className="col-span-2">
+                  <FormField control={form.control} name="amount" render={({ field }) => (
+                    <FormItem><FormLabel>סכום *</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>
+                  )} />
+                </div>
+                <FormField control={form.control} name="currency" render={({ field }) => (
+                  <FormItem><FormLabel>מטבע</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                      <SelectContent>
+                        {CURRENCY_OPTIONS.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )} />
+              </div>
+              <FormField control={form.control} name="description" render={({ field }) => (
+                <FormItem><FormLabel>תיאור</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+              )} />
+              <FormField control={form.control} name="vendor" render={({ field }) => (
+                <FormItem><FormLabel>ספק</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+              )} />
+              <div className="grid grid-cols-2 gap-3">
+                <FormField control={form.control} name="date" render={({ field }) => (
+                  <FormItem><FormLabel>תאריך</FormLabel><FormControl><Input type="date" {...field} /></FormControl></FormItem>
+                )} />
+                <FormField control={form.control} name="paymentMethod" render={({ field }) => (
+                  <FormItem><FormLabel>אמצעי תשלום</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl><SelectTrigger><SelectValue placeholder="בחר" /></SelectTrigger></FormControl>
+                      <SelectContent>
+                        <SelectItem value="bank_transfer">העברה</SelectItem>
+                        <SelectItem value="bit">ביט</SelectItem>
+                        <SelectItem value="paypal">PayPal</SelectItem>
+                        <SelectItem value="cash">מזומן</SelectItem>
+                        <SelectItem value="credit_card">אשראי</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )} />
+              </div>
+              <FormField control={form.control} name="invoiceLink" render={({ field }) => (
+                <FormItem><FormLabel>קישור חשבונית</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl></FormItem>
+              )} />
+              <FormField control={form.control} name="isPaid" render={({ field }) => (
+                <FormItem className="flex items-center gap-3">
+                  <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                  <FormLabel className="!mt-0">שולם</FormLabel>
+                </FormItem>
+              )} />
+              <div className="flex gap-2 justify-end">
+                <Button type="button" variant="outline" onClick={() => setOpen(false)}>ביטול</Button>
+                <Button type="submit" disabled={loading}>{loading ? "שומר..." : "שמור"}</Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}

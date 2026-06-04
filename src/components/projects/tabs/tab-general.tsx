@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { useForm } from "react-hook-form"
+import { useForm, useWatch } from "react-hook-form"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form"
 import { StatusBadge } from "@/components/projects/status-badge"
 import { PROJECT_TYPE_OPTIONS, PLATFORM_OPTIONS, CURRENCY_OPTIONS } from "@/lib/constants"
-import { formatDate } from "@/lib/utils"
+import { formatDate, formatCurrency } from "@/lib/utils"
 import { Pencil, Check, X, Mail, Phone } from "lucide-react"
 import type { Project, Client, Contact, BusinessEntity, ProjectStatus } from "@/generated/prisma/client"
 
@@ -22,12 +22,57 @@ type FullProject = Project & {
   primaryContact: Contact | null
 }
 
+function ContractBreakdown({ project, currency }: { project: FullProject; currency: string }) {
+  const oneTime = Number(project.contractOneTime ?? 0)
+  const recurring = Number(project.contractRecurring ?? 0)
+  const recurringType = project.contractRecurringType
+
+  if (!oneTime && !recurring) return null
+
+  const annualRecurring = recurringType === "MONTHLY" ? recurring * 12 : recurring
+  const total = oneTime + annualRecurring
+
+  return (
+    <div className="space-y-1 text-sm">
+      {oneTime > 0 && (
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">חד פעמי</span>
+          <span className="font-medium">{formatCurrency(oneTime, currency)}</span>
+        </div>
+      )}
+      {recurring > 0 && (
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">מנוי {recurringType === "MONTHLY" ? "חודשי" : "שנתי"}</span>
+          <span className="font-medium">
+            {formatCurrency(recurring, currency)}/{recurringType === "MONTHLY" ? "חודש" : "שנה"}
+            {recurringType === "MONTHLY" && <span className="text-xs text-muted-foreground mr-1">({formatCurrency(annualRecurring, currency)}/שנה)</span>}
+          </span>
+        </div>
+      )}
+      {oneTime > 0 && recurring > 0 && (
+        <div className="flex justify-between border-t pt-1 mt-1">
+          <span className="font-semibold">שווי שנתי</span>
+          <span className="font-bold">{formatCurrency(total, currency)}</span>
+        </div>
+      )}
+    </div>
+  )
+}
+
+type GeneralFormValues = {
+  name: string; description: string; type: string; platform: string
+  targetDate: string; nextMilestoneDate: string
+  totalContractValue: string
+  contractOneTime: string; contractRecurring: string; contractRecurringType: string
+  currency: string; priority: "LOW" | "MEDIUM" | "HIGH" | "URGENT"; internalNotes: string
+}
+
 export function TabGeneral({ project }: { project: FullProject }) {
   const router = useRouter()
   const [editing, setEditing] = useState(false)
   const [loading, setLoading] = useState(false)
 
-  const form = useForm({
+  const form = useForm<GeneralFormValues>({
     defaultValues: {
       name: project.name,
       description: project.description ?? "",
@@ -36,13 +81,26 @@ export function TabGeneral({ project }: { project: FullProject }) {
       targetDate: project.targetDate ? new Date(project.targetDate).toISOString().split("T")[0] : "",
       nextMilestoneDate: project.nextMilestoneDate ? new Date(project.nextMilestoneDate).toISOString().split("T")[0] : "",
       totalContractValue: project.totalContractValue ? String(Number(project.totalContractValue)) : "",
+      contractOneTime: project.contractOneTime ? String(Number(project.contractOneTime)) : "",
+      contractRecurring: project.contractRecurring ? String(Number(project.contractRecurring)) : "",
+      contractRecurringType: project.contractRecurringType ?? "MONTHLY",
       currency: project.currency,
       priority: project.priority,
       internalNotes: project.internalNotes ?? "",
     },
   })
 
-  const onSave = async (values: ReturnType<typeof form.getValues>) => {
+  const watchedOneTime = useWatch({ control: form.control, name: "contractOneTime" })
+  const watchedRecurring = useWatch({ control: form.control, name: "contractRecurring" })
+  const watchedRecurringType = useWatch({ control: form.control, name: "contractRecurringType" })
+  const watchedCurrency = useWatch({ control: form.control, name: "currency" }) ?? project.currency
+
+  const liveOneTime = Number(watchedOneTime) || 0
+  const liveRecurring = Number(watchedRecurring) || 0
+  const liveAnnual = watchedRecurringType === "MONTHLY" ? liveRecurring * 12 : liveRecurring
+  const liveTotal = liveOneTime + liveAnnual
+
+  const onSave = async (values: GeneralFormValues) => {
     setLoading(true)
     await fetch(`/api/projects/${project.id}`, {
       method: "PATCH",
@@ -50,6 +108,9 @@ export function TabGeneral({ project }: { project: FullProject }) {
       body: JSON.stringify({
         ...values,
         totalContractValue: values.totalContractValue ? Number(values.totalContractValue) : null,
+        contractOneTime: values.contractOneTime ? Number(values.contractOneTime) : null,
+        contractRecurring: values.contractRecurring ? Number(values.contractRecurring) : null,
+        contractRecurringType: values.contractRecurringType || null,
       }),
     })
     setEditing(false)
@@ -102,6 +163,14 @@ export function TabGeneral({ project }: { project: FullProject }) {
                 <StatusBadge code={project.status.code} className="mt-0.5" />
               </div>
             </div>
+
+            {(project.contractOneTime || project.contractRecurring) && (
+              <div className="pt-2 border-t">
+                <p className="text-xs text-muted-foreground mb-2">שווי חוזה</p>
+                <ContractBreakdown project={project} currency={project.currency} />
+              </div>
+            )}
+
             {project.internalNotes && (
               <div className="pt-2 border-t">
                 <p className="text-xs text-muted-foreground mb-1">הערות פנימיות</p>
@@ -231,12 +300,54 @@ export function TabGeneral({ project }: { project: FullProject }) {
                 </FormItem>
               )} />
             </div>
-            <FormField control={form.control} name="totalContractValue" render={({ field }) => (
-              <FormItem>
-                <FormLabel>שווי חוזה</FormLabel>
-                <FormControl><Input type="number" {...field} /></FormControl>
-              </FormItem>
-            )} />
+
+            {/* Contract value */}
+            <div className="space-y-2 border rounded-lg p-3 bg-slate-50">
+              <p className="text-xs font-semibold text-muted-foreground">שווי חוזה</p>
+              <FormField control={form.control} name="totalContractValue" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs">סכום כולל (ישיר)</FormLabel>
+                  <FormControl><Input type="number" placeholder="0" {...field} /></FormControl>
+                </FormItem>
+              )} />
+              <p className="text-xs text-muted-foreground">או לחלופין — פירוט:</p>
+              <div className="grid grid-cols-2 gap-3">
+                <FormField control={form.control} name="contractOneTime" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs">חד פעמי</FormLabel>
+                    <FormControl><Input type="number" placeholder="0" {...field} /></FormControl>
+                  </FormItem>
+                )} />
+                <div className="space-y-1">
+                  <p className="text-xs font-medium leading-none">מנוי</p>
+                  <div className="flex gap-2">
+                    <FormField control={form.control} name="contractRecurring" render={({ field }) => (
+                      <FormItem className="flex-1">
+                        <FormControl><Input type="number" placeholder="0" {...field} /></FormControl>
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="contractRecurringType" render={({ field }) => (
+                      <FormItem className="w-24">
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                          <SelectContent>
+                            <SelectItem value="MONTHLY">חודשי</SelectItem>
+                            <SelectItem value="YEARLY">שנתי</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
+                    )} />
+                  </div>
+                </div>
+              </div>
+              {liveTotal > 0 && (
+                <div className="flex items-center justify-between text-xs pt-1 border-t">
+                  <span className="text-muted-foreground">שווי שנתי מחושב:</span>
+                  <span className="font-bold">{formatCurrency(liveTotal, watchedCurrency)}</span>
+                </div>
+              )}
+            </div>
+
             <FormField control={form.control} name="internalNotes" render={({ field }) => (
               <FormItem>
                 <FormLabel>הערות פנימיות</FormLabel>

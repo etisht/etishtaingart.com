@@ -134,8 +134,11 @@ model Project {
   nextMilestoneDate  DateTime?
   priority           Priority         @default(MEDIUM)
   internalNotes      String?          @db.Text
-  totalContractValue Decimal?         @db.Decimal(12, 2)
-  currency           String           @default("ILS")
+  contractOneTime       Decimal?         @db.Decimal(12, 2)
+  contractRecurring     Decimal?         @db.Decimal(12, 2)
+  contractRecurringType String?
+  totalContractValue    Decimal?         @db.Decimal(12, 2)
+  currency              String           @default("ILS")
   milestones         Milestone[]
   payments           Payment[]
   costs              Cost[]
@@ -190,21 +193,22 @@ model Payment {
 }
 
 model Cost {
-  id            String    @id @default(cuid())
+  id            String      @id @default(cuid())
   projectId     String
-  project       Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project       Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
   costType      CostType
+  billingType   BillingType @default(ONE_TIME)
   description   String?
   vendor        String?
-  amount        Decimal   @db.Decimal(12, 2)
-  currency      String    @default("ILS")
+  amount        Decimal     @db.Decimal(12, 2)
+  currency      String      @default("ILS")
   date          DateTime?
-  isPaid        Boolean   @default(false)
+  isPaid        Boolean     @default(false)
   paymentMethod String?
   invoiceLink   String?
-  notes         String?   @db.Text
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  notes         String?     @db.Text
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 }
 
 model Partner {
@@ -400,6 +404,12 @@ enum CostType {
   PARTNER
   SUBCONTRACTOR
   OTHER
+}
+
+enum BillingType {
+  ONE_TIME
+  MONTHLY
+  YEARLY
 }
 
 enum AgreementType {

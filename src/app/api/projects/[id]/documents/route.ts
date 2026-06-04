@@ -6,7 +6,8 @@ import { z } from "zod"
 const schema = z.object({
   name: z.string().min(1),
   type: z.enum(["SPEC", "QUOTE", "CONTRACT", "INVOICE", "DESIGN", "OTHER"]),
-  link: z.string().optional(),
+  link: z.string().optional().nullable(),
+  fileAttachment: z.string().optional().nullable(),
   version: z.string().optional(),
   uploadedBy: z.string().optional(),
   notes: z.string().optional(),

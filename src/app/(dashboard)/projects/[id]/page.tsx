@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma"
 import { notFound } from "next/navigation"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { StatusBadge } from "@/components/projects/status-badge"
+import { StatusSelect } from "@/components/projects/status-select"
 import { PRIORITY_CONFIG } from "@/lib/constants"
 import { formatDate, formatCurrency } from "@/lib/utils"
 import { TabGeneral } from "@/components/projects/tabs/tab-general"
@@ -11,13 +11,14 @@ import { TabCosts } from "@/components/projects/tabs/tab-costs"
 import { TabPartners } from "@/components/projects/tabs/tab-partners"
 import { TabDocuments } from "@/components/projects/tabs/tab-documents"
 import { TabTechnical } from "@/components/projects/tabs/tab-technical"
-import { TabTimeTracking } from "@/components/projects/tabs/tab-time-tracking"
-import { TabNotes } from "@/components/projects/tabs/tab-notes"
+import { TabTimeTrackingLazy } from "@/components/projects/tabs/tab-time-tracking-lazy"
+import { TabNotesLazy } from "@/components/projects/tabs/tab-notes-lazy"
 import { calculateProjectFinancials } from "@/lib/calculations"
 
 export default async function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const [project, allPartners] = await Promise.all([
+
+  const [project, allPartners, allStatuses] = await Promise.all([
     prisma.project.findUnique({
       where: { id },
       include: {
@@ -31,22 +32,22 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
         partners: { include: { partner: true } },
         documents: { orderBy: { createdAt: "desc" } },
         technicalLink: true,
-        worklogs: { orderBy: { workDate: "desc" } },
         tasks: { orderBy: { targetDate: "asc" } },
-        projectNotes: { orderBy: { createdAt: "desc" } },
-        activities: { orderBy: { createdAt: "desc" }, take: 50 },
+        // worklogs, projectNotes, activities loaded lazily per tab
       },
     }),
     prisma.partner.findMany({ orderBy: { name: "asc" } }),
+    prisma.projectStatus.findMany({ orderBy: { order: "asc" } }),
   ])
 
   if (!project) notFound()
 
+  // Financials without worklogs (worklogs loaded lazily in the time tab)
   const financials = calculateProjectFinancials(
     project.totalContractValue,
     project.payments,
     project.costs,
-    project.worklogs
+    []
   )
 
   const priority = PRIORITY_CONFIG[project.priority]
@@ -54,12 +55,17 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   return (
     <div className="space-y-4 max-w-6xl">
       {/* Project Header */}
-      <div className="bg-white rounded-xl border border-slate-200 p-5">
+      <div className="bg-white rounded-xl border border-border/60 p-5">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="text-xl font-bold text-slate-900">{project.name}</h1>
-              <StatusBadge code={project.status.code} />
+              <h1 className="text-xl font-bold">{project.name}</h1>
+              <StatusSelect
+                projectId={project.id}
+                currentStatusId={project.statusId}
+                currentCode={project.status.code}
+                statuses={allStatuses}
+              />
               <span className={`text-xs font-semibold ${priority.color}`}>{priority.label}</span>
             </div>
             <div className="flex gap-4 mt-2 text-sm text-muted-foreground flex-wrap">
@@ -72,7 +78,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
           </div>
           <div className="shrink-0 text-left space-y-1">
             {project.totalContractValue && (
-              <p className="text-lg font-bold text-slate-800">
+              <p className="text-lg font-bold">
                 {formatCurrency(Number(project.totalContractValue), project.currency)}
               </p>
             )}
@@ -83,14 +89,14 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
         </div>
 
         {/* Financial quick summary */}
-        {financials.totalContractValue > 0 && (
+        {(financials.totalContractValue > 0 || financials.salePrice > 0) && (
           <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-slate-100">
             <div className="text-center">
               <p className="text-xs text-muted-foreground">שולם</p>
               <p className="font-semibold text-green-600">{formatCurrency(financials.totalPaid, project.currency)}</p>
             </div>
             <div className="text-center">
-              <p className="text-xs text-muted-foreground">יתרה</p>
+              <p className="text-xs text-muted-foreground">יתרה לגבייה</p>
               <p className="font-semibold text-orange-600">{formatCurrency(financials.balance, project.currency)}</p>
             </div>
             <div className="text-center">
@@ -139,10 +145,10 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
           <TabTechnical projectId={project.id} technicalLink={project.technicalLink} />
         </TabsContent>
         <TabsContent value="time" className="mt-4">
-          <TabTimeTracking projectId={project.id} worklogs={project.worklogs} financials={financials} currency={project.currency} />
+          <TabTimeTrackingLazy projectId={project.id} currency={project.currency} />
         </TabsContent>
         <TabsContent value="notes" className="mt-4">
-          <TabNotes projectId={project.id} notes={project.projectNotes} activities={project.activities} />
+          <TabNotesLazy projectId={project.id} />
         </TabsContent>
       </Tabs>
     </div>

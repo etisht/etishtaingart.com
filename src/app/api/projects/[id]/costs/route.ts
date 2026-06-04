@@ -5,6 +5,7 @@ import { z } from "zod"
 
 const schema = z.object({
   costType: z.enum(["DEVELOPMENT", "DESIGN", "HOSTING", "TOOLS", "LICENSES", "PARTNER", "SUBCONTRACTOR", "OTHER"]),
+  billingType: z.enum(["ONE_TIME", "MONTHLY", "YEARLY"]).optional(),
   description: z.string().optional(),
   vendor: z.string().optional(),
   amount: z.number(),

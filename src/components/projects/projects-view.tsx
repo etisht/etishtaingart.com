@@ -23,13 +23,28 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Plus, Search, LayoutList, KanbanSquare, MoreHorizontal, Eye, Trash2 } from "lucide-react"
 import { EmptyState } from "@/components/shared/empty-state"
-import type { Project, Client, BusinessEntity, ProjectStatus } from "@/generated/prisma/client"
+import { SortableHeader } from "@/components/shared/sortable-header"
+import type { Project, Client, BusinessEntity, ProjectStatus, Cost } from "@/generated/prisma/client"
 
 type ProjectRow = Project & {
   client: Client
   businessEntity: BusinessEntity
   status: ProjectStatus
+  costs: Cost[]
   _count: { milestones: number; tasks: number }
+}
+
+function calcSalePrice(costs: Cost[]) {
+  const oneTime = costs
+    .filter((c) => !c.billingType || c.billingType === "ONE_TIME")
+    .reduce((s, c) => s + Number(c.amount), 0)
+  const annual = costs
+    .filter((c) => c.billingType === "MONTHLY")
+    .reduce((s, c) => s + Number(c.amount) * 12, 0)
+    + costs
+    .filter((c) => c.billingType === "YEARLY")
+    .reduce((s, c) => s + Number(c.amount), 0)
+  return { oneTime, annual, total: oneTime + annual }
 }
 
 interface ProjectsViewProps {
@@ -46,9 +61,21 @@ export function ProjectsView({ initialProjects, statuses, businessEntities }: Pr
   const [filterStatus, setFilterStatus] = useState("ALL")
   const [filterEntity, setFilterEntity] = useState("ALL")
   const [showForm, setShowForm] = useState(false)
+  const [sortField, setSortField] = useState<string | null>(null)
+  const [sortDir, setSortDir] = useState<"asc" | "desc" | null>(null)
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      if (sortDir === "asc") { setSortDir("desc") }
+      else if (sortDir === "desc") { setSortField(null); setSortDir(null) }
+    } else {
+      setSortField(field)
+      setSortDir("asc")
+    }
+  }
 
   const filtered = useMemo(() => {
-    return projects.filter((p) => {
+    let list = projects.filter((p) => {
       if (filterStatus !== "ALL" && p.status.code !== filterStatus) return false
       if (filterEntity !== "ALL" && p.businessEntityId !== filterEntity) return false
       if (search) {
@@ -57,7 +84,23 @@ export function ProjectsView({ initialProjects, statuses, businessEntities }: Pr
       }
       return true
     })
-  }, [projects, filterStatus, filterEntity, search])
+    if (sortField && sortDir) {
+      list = [...list].sort((a, b) => {
+        let av: unknown, bv: unknown
+        if (sortField === "name") { av = a.name; bv = b.name }
+        else if (sortField === "client") { av = a.client.name; bv = b.client.name }
+        else if (sortField === "status") { av = a.status.order; bv = b.status.order }
+        else if (sortField === "value") { av = Number(a.totalContractValue ?? 0); bv = Number(b.totalContractValue ?? 0) }
+        else if (sortField === "targetDate") { av = a.targetDate?.toString() ?? ""; bv = b.targetDate?.toString() ?? "" }
+        else if (sortField === "updatedAt") { av = a.updatedAt?.toString() ?? ""; bv = b.updatedAt?.toString() ?? "" }
+        if (av == null) return 1
+        if (bv == null) return -1
+        const cmp = av < bv ? -1 : av > bv ? 1 : 0
+        return sortDir === "asc" ? cmp : -cmp
+      })
+    }
+    return list
+  }, [projects, filterStatus, filterEntity, search, sortField, sortDir])
 
   const handleDelete = async (id: string) => {
     await fetch(`/api/projects/${id}`, { method: "DELETE" })
@@ -119,7 +162,7 @@ export function ProjectsView({ initialProjects, statuses, businessEntities }: Pr
             className="pr-9"
           />
         </div>
-        <Select value={filterStatus} onValueChange={setFilterStatus}>
+        <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v ?? "ALL")}>
           <SelectTrigger className="w-44">
             <SelectValue placeholder="כל הסטטוסים" />
           </SelectTrigger>
@@ -130,7 +173,7 @@ export function ProjectsView({ initialProjects, statuses, businessEntities }: Pr
             ))}
           </SelectContent>
         </Select>
-        <Select value={filterEntity} onValueChange={setFilterEntity}>
+        <Select value={filterEntity} onValueChange={(v) => setFilterEntity(v ?? "ALL")}>
           <SelectTrigger className="w-44">
             <SelectValue placeholder="כל הישויות" />
           </SelectTrigger>
@@ -167,11 +210,12 @@ export function ProjectsView({ initialProjects, statuses, businessEntities }: Pr
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="text-right">פרויקט</TableHead>
-                    <TableHead className="text-right">לקוח</TableHead>
-                    <TableHead className="text-right">סטטוס</TableHead>
-                    <TableHead className="text-right">עלות</TableHead>
-                    <TableHead className="text-right">דדליין</TableHead>
+                    <TableHead><SortableHeader label="פרויקט" field="name" sortField={sortField} sortDir={sortDir} onSort={handleSort} /></TableHead>
+                    <TableHead><SortableHeader label="לקוח" field="client" sortField={sortField} sortDir={sortDir} onSort={handleSort} /></TableHead>
+                    <TableHead><SortableHeader label="סטטוס" field="status" sortField={sortField} sortDir={sortDir} onSort={handleSort} /></TableHead>
+                    <TableHead><SortableHeader label="שווי חוזה" field="value" sortField={sortField} sortDir={sortDir} onSort={handleSort} /></TableHead>
+                    <TableHead className="text-right">מחיר מכירה</TableHead>
+                    <TableHead><SortableHeader label="דדליין" field="targetDate" sortField={sortField} sortDir={sortDir} onSort={handleSort} /></TableHead>
                     <TableHead className="text-right">עדיפות</TableHead>
                     <TableHead />
                   </TableRow>
@@ -179,6 +223,7 @@ export function ProjectsView({ initialProjects, statuses, businessEntities }: Pr
                 <TableBody>
                   {filtered.map((p) => {
                     const priority = PRIORITY_CONFIG[p.priority]
+                    const sale = calcSalePrice(p.costs)
                     return (
                       <TableRow key={p.id} className="hover:bg-slate-50">
                         <TableCell>
@@ -191,10 +236,29 @@ export function ProjectsView({ initialProjects, statuses, businessEntities }: Pr
                         <TableCell>
                           <StatusBadge code={p.status.code} />
                         </TableCell>
-                        <TableCell className="font-mono text-sm">
-                          {p.totalContractValue
-                            ? formatCurrency(Number(p.totalContractValue), p.currency)
-                            : "—"}
+                        <TableCell className="text-sm">
+                          {p.contractOneTime || p.contractRecurring ? (
+                            <div>
+                              <p className="font-semibold">{formatCurrency(Number(p.totalContractValue ?? 0), p.currency)}/שנה</p>
+                              <p className="text-xs text-muted-foreground">
+                                {Number(p.contractOneTime ?? 0) > 0 && `${formatCurrency(Number(p.contractOneTime), p.currency)} חד-פעמי`}
+                                {Number(p.contractOneTime ?? 0) > 0 && Number(p.contractRecurring ?? 0) > 0 && " + "}
+                                {Number(p.contractRecurring ?? 0) > 0 && `${formatCurrency(Number(p.contractRecurring), p.currency)}/${p.contractRecurringType === "MONTHLY" ? "חודש" : "שנה"}`}
+                              </p>
+                            </div>
+                          ) : p.totalContractValue ? (
+                            formatCurrency(Number(p.totalContractValue), p.currency)
+                          ) : "—"}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {sale.total > 0 ? (
+                            <div>
+                              <p className="font-semibold text-green-700">{formatCurrency(sale.total, p.currency)}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {formatCurrency(sale.oneTime, p.currency)} + {formatCurrency(sale.annual, p.currency)}/שנה
+                              </p>
+                            </div>
+                          ) : "—"}
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {formatDate(p.targetDate)}
@@ -204,17 +268,13 @@ export function ProjectsView({ initialProjects, statuses, businessEntities }: Pr
                         </TableCell>
                         <TableCell>
                           <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
+                            <DropdownMenuTrigger className="inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-muted transition-colors">
+                              <MoreHorizontal className="h-4 w-4" />
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem asChild>
-                                <Link href={`/projects/${p.id}`}>
-                                  <Eye className="h-4 w-4 ml-2" />
-                                  פתח פרויקט
-                                </Link>
+                              <DropdownMenuItem onClick={() => router.push(`/projects/${p.id}`)}>
+                                <Eye className="h-4 w-4 ml-2" />
+                                פתח פרויקט
                               </DropdownMenuItem>
                               <ConfirmDialog
                                 trigger={
@@ -244,7 +304,10 @@ export function ProjectsView({ initialProjects, statuses, businessEntities }: Pr
       {showForm && (
         <ProjectForm
           businessEntities={businessEntities}
-          onSaved={() => { setShowForm(false); router.refresh() }}
+          onSaved={(saved) => {
+            setShowForm(false)
+            setProjects((prev) => [saved as unknown as ProjectRow, ...prev])
+          }}
           onClose={() => setShowForm(false)}
         />
       )}

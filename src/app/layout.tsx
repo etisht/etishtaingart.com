@@ -1,14 +1,15 @@
 import type { Metadata } from "next"
-import { Geist } from "next/font/google"
+import { Heebo } from "next/font/google"
 import "./globals.css"
 
-const geist = Geist({
-  variable: "--font-geist",
-  subsets: ["latin"],
+const heebo = Heebo({
+  variable: "--font-heebo",
+  subsets: ["hebrew", "latin"],
+  weight: ["300", "400", "500", "600", "700", "800"],
 })
 
 export const metadata: Metadata = {
-  title: "Mindora CRM",
+  title: "Eti Shtaingart CRM",
   description: "מערכת ניהול פרויקטים ולקוחות",
 }
 
@@ -18,8 +19,8 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="he" dir="rtl" className={`${geist.variable} h-full antialiased`}>
-      <body className="min-h-full">{children}</body>
+    <html lang="he" dir="rtl" className={`${heebo.variable} h-full antialiased`}>
+      <body className="min-h-full font-sans">{children}</body>
     </html>
   )
 }

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table"
@@ -17,6 +17,7 @@ import { ClientForm } from "./client-form"
 import { CLIENT_STATUS_CONFIG } from "@/lib/constants"
 import { formatDate } from "@/lib/utils"
 import { Plus, Search, MoreHorizontal, Eye, Edit, Trash2, Building2 } from "lucide-react"
+import { SortableHeader } from "@/components/shared/sortable-header"
 import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 import { EmptyState } from "@/components/shared/empty-state"
 import type { Client, Contact } from "@/generated/prisma/client"
@@ -36,22 +37,53 @@ export function ClientsTable({ initialClients }: ClientsTableProps) {
   const [search, setSearch] = useState("")
   const [showForm, setShowForm] = useState(false)
   const [editClient, setEditClient] = useState<ClientRow | null>(null)
+  const [sortField, setSortField] = useState<string | null>(null)
+  const [sortDir, setSortDir] = useState<"asc" | "desc" | null>(null)
 
-  const filtered = clients.filter(
-    (c) =>
-      c.name.toLowerCase().includes(search.toLowerCase()) ||
-      (c.industry ?? "").toLowerCase().includes(search.toLowerCase())
-  )
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      if (sortDir === "asc") setSortDir("desc")
+      else if (sortDir === "desc") { setSortField(null); setSortDir(null) }
+    } else { setSortField(field); setSortDir("asc") }
+  }
+
+  const filtered: ClientRow[] = (() => {
+    let list = clients.filter(
+      (c) =>
+        c.name.toLowerCase().includes(search.toLowerCase()) ||
+        (c.industry ?? "").toLowerCase().includes(search.toLowerCase())
+    )
+    if (sortField && sortDir) {
+      list = [...list].sort((a, b) => {
+        let av: unknown, bv: unknown
+        if (sortField === "name") { av = a.name; bv = b.name }
+        else if (sortField === "status") { av = a.status; bv = b.status }
+        else if (sortField === "projects") { av = a._count.projects; bv = b._count.projects }
+        else if (sortField === "updatedAt") { av = a.updatedAt; bv = b.updatedAt }
+        if (av == null) return 1
+        if (bv == null) return -1
+        const cmp = av < bv ? -1 : av > bv ? 1 : 0
+        return sortDir === "asc" ? cmp : -cmp
+      })
+    }
+    return list
+  })()
 
   const handleDelete = async (id: string) => {
     await fetch(`/api/clients/${id}`, { method: "DELETE" })
     setClients((prev) => prev.filter((c) => c.id !== id))
   }
 
-  const handleSaved = () => {
+  const handleSaved = (saved: Client) => {
     setShowForm(false)
     setEditClient(null)
-    router.refresh()
+    if (editClient) {
+      setClients((prev) => prev.map((c) =>
+        c.id === saved.id ? { ...saved, contacts: c.contacts, _count: c._count } : c
+      ))
+    } else {
+      setClients((prev) => [{ ...saved, contacts: [], _count: { contacts: 0, projects: 0 } }, ...prev])
+    }
   }
 
   return (
@@ -97,12 +129,12 @@ export function ClientsTable({ initialClients }: ClientsTableProps) {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-right">שם לקוח</TableHead>
+                  <TableHead><SortableHeader label="שם לקוח" field="name" sortField={sortField} sortDir={sortDir} onSort={handleSort} /></TableHead>
                   <TableHead className="text-right">סוג / תחום</TableHead>
                   <TableHead className="text-right">איש קשר ראשי</TableHead>
-                  <TableHead className="text-right">פרויקטים</TableHead>
-                  <TableHead className="text-right">סטטוס</TableHead>
-                  <TableHead className="text-right">עדכון אחרון</TableHead>
+                  <TableHead><SortableHeader label="פרויקטים" field="projects" sortField={sortField} sortDir={sortDir} onSort={handleSort} /></TableHead>
+                  <TableHead><SortableHeader label="סטטוס" field="status" sortField={sortField} sortDir={sortDir} onSort={handleSort} /></TableHead>
+                  <TableHead><SortableHeader label="עדכון אחרון" field="updatedAt" sortField={sortField} sortDir={sortDir} onSort={handleSort} /></TableHead>
                   <TableHead />
                 </TableRow>
               </TableHeader>
@@ -120,10 +152,8 @@ export function ClientsTable({ initialClients }: ClientsTableProps) {
                           <p className="text-xs text-muted-foreground">{client.industry}</p>
                         )}
                       </TableCell>
-                      <TableCell>
-                        <div className="text-sm">
-                          {client.type && <span>{client.type}</span>}
-                        </div>
+                      <TableCell className="text-sm">
+                        {client.type ?? "—"}
                       </TableCell>
                       <TableCell>
                         {primaryContact ? (
@@ -150,17 +180,13 @@ export function ClientsTable({ initialClients }: ClientsTableProps) {
                       </TableCell>
                       <TableCell>
                         <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
+                          <DropdownMenuTrigger className="inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-muted transition-colors">
+                            <MoreHorizontal className="h-4 w-4" />
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem asChild>
-                              <Link href={`/clients/${client.id}`} className="flex items-center gap-2">
-                                <Eye className="h-4 w-4" />
-                                צפייה
-                              </Link>
+                            <DropdownMenuItem onClick={() => router.push(`/clients/${client.id}`)}>
+                              <Eye className="h-4 w-4 ml-2" />
+                              צפייה
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => setEditClient(client)}>
                               <Edit className="h-4 w-4 ml-2" />

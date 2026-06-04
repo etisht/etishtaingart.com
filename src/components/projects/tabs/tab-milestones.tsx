@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -42,7 +41,6 @@ interface TabMilestonesProps {
 }
 
 export function TabMilestones({ projectId, milestones: initial, financials, currency }: TabMilestonesProps) {
-  const router = useRouter()
   const [milestones, setMilestones] = useState(initial)
   const [open, setOpen] = useState(false)
   const [editItem, setEditItem] = useState<Milestone | null>(null)
@@ -81,7 +79,7 @@ export function TabMilestones({ projectId, milestones: initial, financials, curr
     setOpen(true)
   }
 
-  const onSubmit = async (values: ReturnType<typeof form.getValues>) => {
+  const onSubmit = async (values: Record<string, string>) => {
     setLoading(true)
     const body = {
       ...values,

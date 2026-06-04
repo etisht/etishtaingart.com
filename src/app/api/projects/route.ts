@@ -17,9 +17,19 @@ const schema = z.object({
   nextMilestoneDate: z.string().optional().nullable(),
   priority: z.enum(["LOW", "MEDIUM", "HIGH", "URGENT"]).optional(),
   internalNotes: z.string().optional(),
+  contractOneTime: z.number().optional().nullable(),
+  contractRecurring: z.number().optional().nullable(),
+  contractRecurringType: z.enum(["MONTHLY", "YEARLY"]).optional().nullable(),
   totalContractValue: z.number().optional().nullable(),
   currency: z.string().optional(),
 })
+
+function computeTotal(oneTime?: number | null, recurring?: number | null, type?: string | null): number | null {
+  if (!oneTime && !recurring) return null
+  const base = oneTime ?? 0
+  const rec = recurring ?? 0
+  return base + (type === "MONTHLY" ? rec * 12 : rec)
+}
 
 export async function GET(req: NextRequest) {
   const session = await auth()
@@ -77,7 +87,10 @@ export async function POST(req: NextRequest) {
       startDate: data.startDate ? new Date(data.startDate) : undefined,
       targetDate: data.targetDate ? new Date(data.targetDate) : undefined,
       nextMilestoneDate: data.nextMilestoneDate ? new Date(data.nextMilestoneDate) : undefined,
-      totalContractValue: data.totalContractValue ?? undefined,
+      contractOneTime: data.contractOneTime ?? undefined,
+      contractRecurring: data.contractRecurring ?? undefined,
+      contractRecurringType: data.contractRecurringType ?? undefined,
+      totalContractValue: computeTotal(data.contractOneTime, data.contractRecurring, data.contractRecurringType) ?? data.totalContractValue ?? undefined,
     },
     include: { client: true, status: true, businessEntity: true },
   })

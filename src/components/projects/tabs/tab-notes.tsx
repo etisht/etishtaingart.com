@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
@@ -72,7 +72,7 @@ export function TabNotes({ projectId, notes: initial, activities }: TabNotesProp
           <Card className="p-4">
             <div className="space-y-3">
               <div className="flex gap-2">
-                <Select value={noteType} onValueChange={setNoteType}>
+                <Select value={noteType} onValueChange={(v) => setNoteType(v ?? "general")}>
                   <SelectTrigger className="w-44">
                     <SelectValue />
                   </SelectTrigger>

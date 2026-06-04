@@ -6,14 +6,13 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { useForm } from "react-hook-form"
 import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 import { formatDate, formatCurrency } from "@/lib/utils"
-import { COST_TYPE_LABELS, CURRENCY_OPTIONS } from "@/lib/constants"
-import { Plus, Trash2, Check } from "lucide-react"
+import { COST_TYPE_LABELS, BILLING_TYPE_LABELS, CURRENCY_OPTIONS } from "@/lib/constants"
+import { Plus, Trash2 } from "lucide-react"
 import type { Cost } from "@/generated/prisma/client"
 import type { ProjectFinancials } from "@/lib/calculations"
 
@@ -24,6 +23,12 @@ interface TabCostsProps {
   currency: string
 }
 
+const BILLING_BADGE: Record<string, { label: string; color: string }> = {
+  ONE_TIME: { label: "חד פעמי", color: "bg-blue-100 text-blue-700" },
+  MONTHLY:  { label: "חודשי",   color: "bg-purple-100 text-purple-700" },
+  YEARLY:   { label: "שנתי",    color: "bg-orange-100 text-orange-700" },
+}
+
 export function TabCosts({ projectId, costs: initial, financials, currency }: TabCostsProps) {
   const [costs, setCosts] = useState(initial)
   const [open, setOpen] = useState(false)
@@ -31,13 +36,15 @@ export function TabCosts({ projectId, costs: initial, financials, currency }: Ta
 
   const form = useForm({
     defaultValues: {
-      costType: "DEVELOPMENT", description: "", vendor: "",
+      costType: "DEVELOPMENT", billingType: "ONE_TIME", description: "", vendor: "",
       amount: "", currency: currency, date: "",
       isPaid: false, paymentMethod: "", invoiceLink: "", notes: "",
     },
   })
 
-  const onSubmit = async (values: ReturnType<typeof form.getValues>) => {
+  type FormValues = { costType: string; billingType: string; description: string; vendor: string; amount: string; currency: string; date: string; isPaid: boolean; paymentMethod: string; invoiceLink: string; notes: string }
+
+  const onSubmit = async (values: FormValues) => {
     setLoading(true)
     const res = await fetch(`/api/projects/${projectId}/costs`, {
       method: "POST",
@@ -47,6 +54,7 @@ export function TabCosts({ projectId, costs: initial, financials, currency }: Ta
     const created: Cost = await res.json()
     setCosts((prev) => [created, ...prev])
     setOpen(false)
+    form.reset()
     setLoading(false)
   }
 
@@ -61,9 +69,41 @@ export function TabCosts({ projectId, costs: initial, financials, currency }: Ta
     total: costs.filter((c) => c.costType === key).reduce((s, c) => s + Number(c.amount), 0),
   })).filter((g) => g.items.length > 0)
 
+  const localOneTime = costs
+    .filter((c) => !c.billingType || c.billingType === "ONE_TIME")
+    .reduce((s, c) => s + Number(c.amount), 0)
+  const localMonthly = costs
+    .filter((c) => c.billingType === "MONTHLY")
+    .reduce((s, c) => s + Number(c.amount), 0)
+  const localYearly = costs
+    .filter((c) => c.billingType === "YEARLY")
+    .reduce((s, c) => s + Number(c.amount), 0)
+  const localAnnual = localMonthly * 12 + localYearly
+  const localSalePrice = localOneTime + localAnnual
+
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-3 gap-3">
+      {/* Summary cards */}
+      <div className="grid grid-cols-2 gap-3">
+        <Card className="p-4 col-span-2" style={{ background: "oklch(0.97 0.02 145)", border: "1px solid oklch(0.85 0.08 145)" }}>
+          <p className="text-xs text-muted-foreground mb-2 font-medium">מחיר מכירה = חד פעמי + שימוש שנה אחת</p>
+          <div className="flex items-end gap-6 flex-wrap">
+            <div>
+              <p className="text-xs text-muted-foreground">חד פעמי</p>
+              <p className="text-base font-semibold">{formatCurrency(localOneTime, currency)}</p>
+            </div>
+            <div className="text-muted-foreground text-sm self-center">+</div>
+            <div>
+              <p className="text-xs text-muted-foreground">שימוש שנתי ({localMonthly > 0 ? `חודשי ×12` : ""}{localMonthly > 0 && localYearly > 0 ? " + " : ""}{localYearly > 0 ? "שנתי" : ""})</p>
+              <p className="text-base font-semibold">{formatCurrency(localAnnual, currency)}</p>
+            </div>
+            <div className="text-muted-foreground text-sm self-center">=</div>
+            <div>
+              <p className="text-xs text-muted-foreground font-medium">מחיר מכירה</p>
+              <p className="text-xl font-bold" style={{ color: "oklch(0.45 0.15 145)" }}>{formatCurrency(localSalePrice, currency)}</p>
+            </div>
+          </div>
+        </Card>
         <Card className="p-4 text-center">
           <p className="text-xs text-muted-foreground">סה״כ עלויות</p>
           <p className="text-xl font-bold text-red-600 mt-1">{formatCurrency(financials.totalCosts, currency)}</p>
@@ -72,12 +112,6 @@ export function TabCosts({ projectId, costs: initial, financials, currency }: Ta
           <p className="text-xs text-muted-foreground">רווח צפוי</p>
           <p className={`text-xl font-bold mt-1 ${financials.expectedProfit >= 0 ? "text-green-600" : "text-red-600"}`}>
             {formatCurrency(financials.expectedProfit, currency)}
-          </p>
-        </Card>
-        <Card className="p-4 text-center">
-          <p className="text-xs text-muted-foreground">אחוז רווחיות</p>
-          <p className={`text-xl font-bold mt-1 ${financials.profitMargin >= 0 ? "text-green-600" : "text-red-600"}`}>
-            {financials.profitMargin.toFixed(0)}%
           </p>
         </Card>
       </div>
@@ -101,31 +135,38 @@ export function TabCosts({ projectId, costs: initial, financials, currency }: Ta
                 <span className="text-sm font-bold">{formatCurrency(total, currency)}</span>
               </div>
               <CardContent className="p-0">
-                {items.map((c) => (
-                  <div key={c.id} className="flex items-center justify-between px-4 py-3 border-b last:border-0">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium">{formatCurrency(Number(c.amount), c.currency)}</p>
-                        {c.isPaid ? (
-                          <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">שולם</span>
-                        ) : (
-                          <span className="text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">לא שולם</span>
-                        )}
+                {items.map((c) => {
+                  const billing = BILLING_BADGE[c.billingType ?? "ONE_TIME"] ?? BILLING_BADGE.ONE_TIME
+                  return (
+                    <div key={c.id} className="flex items-center justify-between px-4 py-3 border-b last:border-0">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-sm font-medium">{formatCurrency(Number(c.amount), c.currency)}</p>
+                          <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${billing.color}`}>{billing.label}</span>
+                          {c.billingType === "MONTHLY" && (
+                            <span className="text-xs text-muted-foreground">({formatCurrency(Number(c.amount) * 12, c.currency)}/שנה)</span>
+                          )}
+                          {c.isPaid ? (
+                            <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">שולם</span>
+                          ) : (
+                            <span className="text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">לא שולם</span>
+                          )}
+                        </div>
+                        {c.description && <p className="text-xs text-muted-foreground mt-0.5">{c.description}</p>}
+                        {c.vendor && <p className="text-xs text-muted-foreground">ספק: {c.vendor}</p>}
+                        {c.date && <p className="text-xs text-muted-foreground">{formatDate(c.date)}</p>}
                       </div>
-                      {c.description && <p className="text-xs text-muted-foreground">{c.description}</p>}
-                      {c.vendor && <p className="text-xs text-muted-foreground">ספק: {c.vendor}</p>}
-                      {c.date && <p className="text-xs text-muted-foreground">{formatDate(c.date)}</p>}
+                      <ConfirmDialog
+                        trigger={
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500">
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        }
+                        onConfirm={() => handleDelete(c.id)}
+                      />
                     </div>
-                    <ConfirmDialog
-                      trigger={
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500">
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      }
-                      onConfirm={() => handleDelete(c.id)}
-                    />
-                  </div>
-                ))}
+                  )
+                })}
               </CardContent>
             </Card>
           ))}
@@ -137,18 +178,32 @@ export function TabCosts({ projectId, costs: initial, financials, currency }: Ta
           <DialogHeader><DialogTitle>עלות חדשה</DialogTitle></DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
-              <FormField control={form.control} name="costType" render={({ field }) => (
-                <FormItem><FormLabel>סוג עלות *</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                    <SelectContent>
-                      {Object.entries(COST_TYPE_LABELS).map(([v, l]) => (
-                        <SelectItem key={v} value={v}>{l}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormItem>
-              )} />
+              <div className="grid grid-cols-2 gap-3">
+                <FormField control={form.control} name="costType" render={({ field }) => (
+                  <FormItem><FormLabel>סוג עלות *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                      <SelectContent>
+                        {Object.entries(COST_TYPE_LABELS).map(([v, l]) => (
+                          <SelectItem key={v} value={v}>{l}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="billingType" render={({ field }) => (
+                  <FormItem><FormLabel>סוג חיוב *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                      <SelectContent>
+                        {Object.entries(BILLING_TYPE_LABELS).map(([v, l]) => (
+                          <SelectItem key={v} value={v}>{l}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )} />
+              </div>
               <div className="grid grid-cols-3 gap-3">
                 <div className="col-span-2">
                   <FormField control={form.control} name="amount" render={({ field }) => (

@@ -26,21 +26,18 @@ export function Topbar() {
     crumbs.push({ label, href: builtPath })
   }
 
-  const dedupedCrumbs =
-    crumbs.length === 1 && crumbs[0].href === "/"
-      ? crumbs
-      : crumbs.slice(0, -1).concat(crumbs.slice(-1))
-
   return (
-    <header className="h-14 bg-white border-b border-slate-200 flex items-center px-6 gap-2">
+    <header className="h-14 bg-white/80 backdrop-blur-md flex items-center px-6 gap-2 sticky top-0 z-10"
+      style={{ borderBottom: "1px solid oklch(0.88 0.008 240)" }}
+    >
       <nav className="flex items-center gap-1 text-sm">
         {crumbs.map((crumb, i) => (
           <span key={crumb.href} className="flex items-center gap-1">
-            {i > 0 && <ChevronLeft className="h-3 w-3 text-slate-400" />}
+            {i > 0 && <ChevronLeft className="h-3 w-3 text-muted-foreground/50" />}
             {i === crumbs.length - 1 ? (
-              <span className="font-semibold text-slate-800">{crumb.label}</span>
+              <span className="font-semibold text-foreground">{crumb.label}</span>
             ) : (
-              <Link href={crumb.href} className="text-slate-500 hover:text-slate-800 transition-colors">
+              <Link href={crumb.href} className="text-muted-foreground hover:text-foreground transition-colors">
                 {crumb.label}
               </Link>
             )}

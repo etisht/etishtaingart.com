@@ -9,6 +9,7 @@ export default async function ProjectsPage() {
         businessEntity: true,
         status: true,
         primaryContact: true,
+        costs: true,
         _count: { select: { milestones: true, tasks: true } },
       },
       orderBy: { updatedAt: "desc" },

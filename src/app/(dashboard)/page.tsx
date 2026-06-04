@@ -1,13 +1,11 @@
 import { prisma } from "@/lib/prisma"
 import { KpiCard } from "@/components/dashboard/kpi-card"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { StatusBadge } from "@/components/projects/status-badge"
 import { formatCurrency, formatDate } from "@/lib/utils"
-import { PRIORITY_CONFIG } from "@/lib/constants"
 import Link from "next/link"
 import {
-  FolderKanban, FileText, Hammer, TrendingUp,
-  Banknote, Clock, AlertTriangle, CalendarClock,
+  FolderKanban, FileText, TrendingUp,
+  Banknote, AlertTriangle, CalendarClock, Clock, ArrowLeft,
 } from "lucide-react"
 import { subDays, addDays } from "date-fns"
 
@@ -19,7 +17,6 @@ export default async function DashboardPage() {
     activeCount,
     openQuotesCount,
     inDevCount,
-    negotiationCount,
     paidThisMonth,
     outstanding,
     upcomingMilestones,
@@ -34,7 +31,6 @@ export default async function DashboardPage() {
       where: { status: { code: { in: ["QUOTE_SENT", "QUOTE_BEFORE_SPEC", "SPEC_BEFORE_QUOTE"] } } },
     }),
     prisma.project.count({ where: { status: { code: "DEVELOPMENT" } } }),
-    prisma.project.count({ where: { status: { code: "NEGOTIATION" } } }),
     prisma.payment.aggregate({
       _sum: { amount: true },
       where: { status: "PAID", paidDate: { gte: startOfMonth } },
@@ -59,7 +55,7 @@ export default async function DashboardPage() {
       },
       include: { client: true, status: true },
       orderBy: { updatedAt: "asc" },
-      take: 6,
+      take: 5,
     }),
     prisma.project.findMany({
       where: {
@@ -68,7 +64,7 @@ export default async function DashboardPage() {
       },
       include: { client: true, status: true },
       orderBy: { targetDate: "asc" },
-      take: 6,
+      take: 5,
     }),
     prisma.project.aggregate({
       _sum: { totalContractValue: true },
@@ -82,9 +78,10 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">דשבורד</h1>
-        <p className="text-sm text-muted-foreground mt-1">תמונת מצב עסקית</p>
+        <h1 className="text-2xl font-bold text-foreground">דשבורד</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">תמונת מצב עסקית עדכנית</p>
       </div>
 
       {/* KPI Grid */}
@@ -93,129 +90,129 @@ export default async function DashboardPage() {
           title="פרויקטים פעילים"
           value={activeCount}
           icon={FolderKanban}
-          subtitle={`${inDevCount} בפיתוח`}
+          iconColor="text-blue-600"
+          iconBg="bg-blue-50"
+          subtitle={`${inDevCount} בפיתוח כעת`}
         />
         <KpiCard
-          title="הצעות מחיר פתוחות"
+          title="הצעות פתוחות"
           value={openQuotesCount}
           icon={FileText}
+          iconColor="text-amber-600"
+          iconBg="bg-amber-50"
           subtitle={formatCurrency(quotesValue)}
-          valueClassName="text-yellow-600"
+          valueClassName="text-amber-600"
         />
         <KpiCard
           title="שולם החודש"
           value={formatCurrency(paidAmount)}
           icon={Banknote}
+          iconColor="text-green-600"
+          iconBg="bg-green-50"
           valueClassName="text-green-600"
         />
         <KpiCard
           title="יתרה לגבייה"
           value={formatCurrency(outstandingAmount)}
           icon={TrendingUp}
-          valueClassName={outstandingAmount > 0 ? "text-orange-600" : undefined}
+          iconColor="text-orange-500"
+          iconBg="bg-orange-50"
+          valueClassName={outstandingAmount > 0 ? "text-orange-500" : "text-foreground"}
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Bottom Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
         {/* Upcoming Milestones */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <CalendarClock className="h-4 w-4 text-blue-600" />
-              מיילסטונים קרובים (30 יום)
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+        <div className="bg-white rounded-xl border border-border/60 overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-border/60">
+            <div className="flex items-center gap-2">
+              <CalendarClock className="h-4 w-4 text-blue-500" />
+              <h3 className="font-semibold text-sm">מיילסטונים קרובים</h3>
+              <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">30 יום</span>
+            </div>
+            <Link href="/projects" className="text-xs text-primary hover:underline flex items-center gap-1">
+              כל הפרויקטים <ArrowLeft className="h-3 w-3" />
+            </Link>
+          </div>
+          <div className="divide-y divide-border/40">
             {upcomingMilestones.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">אין מיילסטונים קרובים</p>
+              <p className="text-sm text-muted-foreground text-center py-10">אין מיילסטונים קרובים</p>
             ) : (
-              <div className="space-y-3">
-                {upcomingMilestones.map((m) => (
-                  <Link
-                    key={m.id}
-                    href={`/projects/${m.project.id}`}
-                    className="flex items-center justify-between hover:bg-slate-50 p-2 rounded-lg transition-colors"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium truncate">{m.name}</p>
-                      <p className="text-xs text-muted-foreground truncate">{m.project.client.name}</p>
-                    </div>
-                    <div className="text-left shrink-0 mr-4">
-                      <p className="text-xs font-medium text-blue-600">{formatDate(m.targetDate)}</p>
-                      {m.amount && (
-                        <p className="text-xs text-muted-foreground">{formatCurrency(Number(m.amount))}</p>
-                      )}
-                    </div>
-                  </Link>
-                ))}
-              </div>
+              upcomingMilestones.map((m) => (
+                <Link key={m.id} href={`/projects/${m.project.id}`}
+                  className="flex items-center justify-between px-5 py-3 hover:bg-muted/40 transition-colors"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium truncate">{m.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">{m.project.client.name}</p>
+                  </div>
+                  <div className="text-left shrink-0 mr-4 space-y-0.5">
+                    <p className="text-xs font-semibold text-blue-600">{formatDate(m.targetDate)}</p>
+                    {m.amount && (
+                      <p className="text-xs text-muted-foreground">{formatCurrency(Number(m.amount))}</p>
+                    )}
+                  </div>
+                </Link>
+              ))
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Stuck Projects */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-orange-500" />
-              פרויקטים ללא עדכון (14+ יום)
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+        <div className="bg-white rounded-xl border border-border/60 overflow-hidden">
+          <div className="flex items-center gap-2 px-5 py-4 border-b border-border/60">
+            <AlertTriangle className="h-4 w-4 text-orange-500" />
+            <h3 className="font-semibold text-sm">פרויקטים ללא עדכון</h3>
+            <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">14+ יום</span>
+          </div>
+          <div className="divide-y divide-border/40">
             {stuckProjects.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">כל הפרויקטים מעודכנים</p>
+              <p className="text-sm text-muted-foreground text-center py-10">כל הפרויקטים מעודכנים ✓</p>
             ) : (
-              <div className="space-y-3">
-                {stuckProjects.map((p) => (
-                  <Link
-                    key={p.id}
-                    href={`/projects/${p.id}`}
-                    className="flex items-center justify-between hover:bg-slate-50 p-2 rounded-lg transition-colors"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium truncate">{p.name}</p>
-                      <p className="text-xs text-muted-foreground">{p.client.name}</p>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0 mr-4">
-                      <StatusBadge code={p.status.code} />
-                    </div>
-                  </Link>
-                ))}
-              </div>
+              stuckProjects.map((p) => (
+                <Link key={p.id} href={`/projects/${p.id}`}
+                  className="flex items-center justify-between px-5 py-3 hover:bg-muted/40 transition-colors"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium truncate">{p.name}</p>
+                    <p className="text-xs text-muted-foreground">{p.client.name}</p>
+                  </div>
+                  <div className="shrink-0 mr-4">
+                    <StatusBadge code={p.status.code} />
+                  </div>
+                </Link>
+              ))
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Upcoming Deadlines */}
         {upcomingDeadlines.length > 0 && (
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Clock className="h-4 w-4 text-red-500" />
-                דדליינים קרובים (14 יום)
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {upcomingDeadlines.map((p) => (
-                  <Link
-                    key={p.id}
-                    href={`/projects/${p.id}`}
-                    className="flex items-center justify-between hover:bg-slate-50 p-2 rounded-lg transition-colors"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium truncate">{p.name}</p>
-                      <p className="text-xs text-muted-foreground">{p.client.name}</p>
-                    </div>
-                    <div className="text-left shrink-0 mr-4">
-                      <p className="text-xs font-semibold text-red-600">{formatDate(p.targetDate)}</p>
-                      <StatusBadge code={p.status.code} className="mt-1" />
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <div className="bg-white rounded-xl border border-border/60 overflow-hidden lg:col-span-2">
+            <div className="flex items-center gap-2 px-5 py-4 border-b border-border/60">
+              <Clock className="h-4 w-4 text-red-500" />
+              <h3 className="font-semibold text-sm">דדליינים קרובים</h3>
+              <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">14 יום</span>
+            </div>
+            <div className="divide-y divide-border/40">
+              {upcomingDeadlines.map((p) => (
+                <Link key={p.id} href={`/projects/${p.id}`}
+                  className="flex items-center justify-between px-5 py-3 hover:bg-muted/40 transition-colors"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium truncate">{p.name}</p>
+                    <p className="text-xs text-muted-foreground">{p.client.name}</p>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0 mr-4">
+                    <p className="text-xs font-semibold text-red-600">{formatDate(p.targetDate)}</p>
+                    <StatusBadge code={p.status.code} />
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
         )}
       </div>
     </div>

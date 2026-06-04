@@ -110,6 +110,12 @@ export const PERFORMER_TYPE_LABELS: Record<string, string> = {
   EXTERNAL: "ספק חיצוני",
 }
 
+export const BILLING_TYPE_LABELS: Record<string, string> = {
+  ONE_TIME: "חד פעמי",
+  MONTHLY:  "חודשי",
+  YEARLY:   "שנתי",
+}
+
 export const COST_TYPE_LABELS: Record<string, string> = {
   DEVELOPMENT:   "פיתוח",
   DESIGN:        "עיצוב",

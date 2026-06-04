@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { StatusBadge } from "./status-badge"
-import { STATUS_CONFIG, PRIORITY_CONFIG } from "@/lib/constants"
+import { STATUS_CONFIG } from "@/lib/constants"
 import { formatDate, formatCurrency } from "@/lib/utils"
 import { cn } from "@/lib/utils"
 import type { Project, Client, BusinessEntity, ProjectStatus } from "@/generated/prisma/client"
@@ -19,6 +19,13 @@ interface ProjectsKanbanProps {
   projects: ProjectRow[]
   statuses: ProjectStatus[]
   onStatusChange: (projectId: string, statusId: string) => void
+}
+
+const PRIORITY_DOTS: Record<string, string> = {
+  LOW:    "bg-slate-300",
+  MEDIUM: "bg-blue-400",
+  HIGH:   "bg-orange-400",
+  URGENT: "bg-red-500",
 }
 
 export function ProjectsKanban({ projects, statuses, onStatusChange }: ProjectsKanbanProps) {
@@ -46,69 +53,84 @@ export function ProjectsKanban({ projects, statuses, onStatusChange }: ProjectsK
   }
 
   return (
-    <div className="flex gap-3 overflow-x-auto pb-4" style={{ minHeight: "60vh" }}>
+    <div className="flex gap-3 overflow-x-auto pb-4" style={{ minHeight: "65vh" }}>
       {statuses.map((status) => {
         const cols = projectsByStatus(status.id)
-        const cfg = STATUS_CONFIG[status.code]
+        const isOver = overColumnId === status.id
 
         return (
           <div
             key={status.id}
             className={cn(
-              "flex flex-col rounded-xl border-2 transition-colors min-w-[240px] w-[240px]",
-              overColumnId === status.id ? "border-blue-400 bg-blue-50" : "border-transparent bg-slate-100"
+              "flex flex-col rounded-xl transition-all min-w-[232px] w-[232px] border",
+              isOver
+                ? "border-primary/40 bg-primary/5 shadow-sm"
+                : "border-border/60 bg-muted/40"
             )}
             onDragOver={(e) => { e.preventDefault(); setOverColumnId(status.id) }}
             onDragLeave={() => setOverColumnId(null)}
             onDrop={(e) => handleDrop(e, status.id)}
           >
-            <div className="px-3 py-2.5 border-b border-slate-200">
-              <div className="flex items-center justify-between">
-                <StatusBadge code={status.code} />
-                <span className="text-xs text-muted-foreground font-medium ml-1">{cols.length}</span>
-              </div>
+            {/* Column header */}
+            <div className="px-3 py-3 flex items-center justify-between">
+              <StatusBadge code={status.code} />
+              {cols.length > 0 && (
+                <span className="text-xs text-muted-foreground font-semibold bg-background rounded-full w-5 h-5 flex items-center justify-center border border-border/60">
+                  {cols.length}
+                </span>
+              )}
             </div>
 
-            <div className="flex-1 p-2 space-y-2 overflow-y-auto">
-              {cols.map((p) => {
-                const priority = PRIORITY_CONFIG[p.priority]
-                return (
-                  <div
-                    key={p.id}
-                    draggable
-                    onDragStart={(e) => handleDragStart(e, p.id)}
-                    className={cn(
-                      "bg-white rounded-lg border border-slate-200 p-3 cursor-grab active:cursor-grabbing",
-                      "hover:shadow-md hover:border-blue-300 transition-all",
-                      draggedId === p.id && "opacity-50"
-                    )}
-                  >
-                    <Link href={`/projects/${p.id}`} onClick={(e) => e.stopPropagation()}>
-                      <p className="font-medium text-sm text-slate-800 hover:text-blue-600 transition-colors leading-snug">
-                        {p.name}
-                      </p>
+            {/* Cards */}
+            <div className="flex-1 px-2 pb-2 space-y-2 overflow-y-auto">
+              {cols.map((p) => (
+                <div
+                  key={p.id}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, p.id)}
+                  className={cn(
+                    "bg-white rounded-lg border border-border/60 p-3 cursor-grab active:cursor-grabbing",
+                    "hover:shadow-md hover:border-primary/30 transition-all duration-150",
+                    draggedId === p.id && "opacity-40 scale-95"
+                  )}
+                >
+                  {/* Priority dot + name */}
+                  <div className="flex items-start gap-2">
+                    <div className={cn("w-1.5 h-1.5 rounded-full mt-1.5 shrink-0", PRIORITY_DOTS[p.priority])} />
+                    <Link
+                      href={`/projects/${p.id}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-sm font-semibold text-foreground hover:text-primary transition-colors leading-snug"
+                    >
+                      {p.name}
                     </Link>
-                    <p className="text-xs text-muted-foreground mt-1">{p.client.name}</p>
+                  </div>
 
-                    <div className="flex items-center justify-between mt-2">
-                      {p.totalContractValue ? (
-                        <span className="text-xs font-semibold text-slate-700">
-                          {formatCurrency(Number(p.totalContractValue), p.currency)}
-                        </span>
-                      ) : <span />}
-                      <span className={`text-xs font-medium ${priority.color}`}>
-                        {priority.label}
+                  {/* Client */}
+                  <p className="text-xs text-muted-foreground mt-1.5 mr-3.5">{p.client.name}</p>
+
+                  {/* Footer */}
+                  <div className="flex items-center justify-between mt-2.5 mr-3.5">
+                    {p.totalContractValue ? (
+                      <span className="text-xs font-bold text-foreground/80">
+                        {formatCurrency(Number(p.totalContractValue), p.currency)}
                       </span>
-                    </div>
-
+                    ) : <span />}
                     {p.targetDate && (
-                      <p className="text-xs text-muted-foreground mt-1.5">
-                        יעד: {formatDate(p.targetDate)}
-                      </p>
+                      <span className="text-xs text-muted-foreground">
+                        {formatDate(p.targetDate)}
+                      </span>
                     )}
                   </div>
-                )
-              })}
+                </div>
+              ))}
+
+              {/* Drop zone hint when empty */}
+              {cols.length === 0 && isOver && (
+                <div className="border-2 border-dashed border-primary/30 rounded-lg h-16 flex items-center justify-center">
+                  <span className="text-xs text-primary/60">שחרר כאן</span>
+                </div>
+              )}
             </div>
           </div>
         )

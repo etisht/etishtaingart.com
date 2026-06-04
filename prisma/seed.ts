@@ -1,8 +1,10 @@
 import { PrismaClient, StatusCode } from "../src/generated/prisma/client"
+import { PrismaPg } from "@prisma/adapter-pg"
+import { Pool } from "pg"
 
-const prisma = new PrismaClient({
-  datasourceUrl: process.env.DATABASE_URL,
-})
+const pool = new Pool({ connectionString: process.env.DATABASE_URL })
+const adapter = new PrismaPg(pool)
+const prisma = new PrismaClient({ adapter })
 
 const STATUS_CONFIG: Record<StatusCode, { label: string; color: string; order: number }> = {
   SPEC_BEFORE_QUOTE: { label: "אפיון לפני הצעה",   color: "bg-blue-200 text-blue-800",    order: 1 },

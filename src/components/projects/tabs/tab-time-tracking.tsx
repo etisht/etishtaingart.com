@@ -14,7 +14,7 @@ import { useForm, useWatch } from "react-hook-form"
 import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 import { formatDate, formatCurrency, calcHoursFromTimeRange } from "@/lib/utils"
 import { WORK_TYPE_LABELS, PERFORMER_TYPE_LABELS, PAYMENT_STATUS_LABELS } from "@/lib/constants"
-import { Plus, Trash2, Clock } from "lucide-react"
+import { Plus, Trash2 } from "lucide-react"
 import type { WorkLog } from "@/generated/prisma/client"
 import type { ProjectFinancials } from "@/lib/calculations"
 
@@ -57,7 +57,7 @@ export function TabTimeTracking({ projectId, worklogs: initial, financials, curr
     }
   }
 
-  const onSubmit = async (values: ReturnType<typeof form.getValues>) => {
+  const onSubmit = async (values: Record<string, unknown>) => {
     setLoading(true)
     const res = await fetch(`/api/projects/${projectId}/worklogs`, {
       method: "POST",

@@ -10,7 +10,6 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useForm } from "react-hook-form"
 import { ConfirmDialog } from "@/components/shared/confirm-dialog"
-import { CurrencyDisplay } from "@/components/shared/currency-display"
 import { formatDate, formatCurrency } from "@/lib/utils"
 import { PAYMENT_STATUS_LABELS } from "@/lib/constants"
 import { Plus, Check, Trash2 } from "lucide-react"
@@ -18,6 +17,18 @@ import type { Payment, Milestone } from "@/generated/prisma/client"
 import type { ProjectFinancials } from "@/lib/calculations"
 
 type PaymentWithMilestone = Payment & { milestone?: Milestone | null }
+
+type FormValues = {
+  milestoneId: string
+  amount: string
+  requestDate: string
+  paidDate: string
+  status: string
+  method: string
+  invoiceNumber: string
+  invoiceLink: string
+  notes: string
+}
 
 interface TabPaymentsProps {
   projectId: string
@@ -32,14 +43,14 @@ export function TabPayments({ projectId, payments: initial, milestones, financia
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
 
-  const form = useForm({
+  const form = useForm<FormValues>({
     defaultValues: {
       milestoneId: "", amount: "", requestDate: "", paidDate: "",
       status: "PENDING", method: "", invoiceNumber: "", invoiceLink: "", notes: "",
     },
   })
 
-  const onSubmit = async (values: ReturnType<typeof form.getValues>) => {
+  const onSubmit = async (values: FormValues) => {
     setLoading(true)
     const res = await fetch(`/api/projects/${projectId}/payments`, {
       method: "POST",
@@ -85,7 +96,7 @@ export function TabPayments({ projectId, payments: initial, milestones, financia
 
       <div className="flex justify-between items-center">
         <h3 className="font-semibold">תשלומים</h3>
-        <Button size="sm" onClick={() => setOpen(true)}>
+        <Button size="sm" onClick={() => { form.reset(); setOpen(true) }}>
           <Plus className="h-3.5 w-3.5 ml-1.5" />
           הוסף תשלום
         </Button>
@@ -101,7 +112,7 @@ export function TabPayments({ projectId, payments: initial, milestones, financia
               <Card key={p.id} className="p-4">
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex-1">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 flex-wrap">
                       <p className="font-semibold text-lg">{formatCurrency(Number(p.amount), p.currency)}</p>
                       <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                         p.status === "PAID" ? "bg-green-100 text-green-700" :
@@ -109,18 +120,18 @@ export function TabPayments({ projectId, payments: initial, milestones, financia
                         "bg-gray-100 text-gray-600"
                       }`}>{statusCfg}</span>
                     </div>
-                    <div className="flex gap-4 mt-1 text-xs text-muted-foreground">
+                    <div className="flex gap-4 mt-1 text-xs text-muted-foreground flex-wrap">
                       {p.requestDate && <span>דרישה: {formatDate(p.requestDate)}</span>}
                       {p.paidDate && <span>שולם: {formatDate(p.paidDate)}</span>}
                       {p.method && <span>{p.method}</span>}
                       {p.milestone && <span>מיילסטון: {p.milestone.name}</span>}
                       {p.invoiceNumber && <span>חשבונית #{p.invoiceNumber}</span>}
                     </div>
-                    {p.notes && <p className="text-xs text-slate-500 mt-1">{p.notes}</p>}
+                    {p.notes && <p className="text-xs text-muted-foreground mt-1">{p.notes}</p>}
                   </div>
-                  <div className="flex gap-1">
+                  <div className="flex gap-1 shrink-0">
                     {p.status !== "PAID" && (
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-green-600" onClick={() => markPaid(p)}>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-green-600" onClick={() => markPaid(p)} title="סמן כשולם">
                         <Check className="h-4 w-4" />
                       </Button>
                     )}

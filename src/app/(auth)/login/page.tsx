@@ -2,44 +2,90 @@
 
 import { signIn } from "next-auth/react"
 import { useSearchParams } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Suspense } from "react"
 
 function LoginContent() {
   const searchParams = useSearchParams()
   const error = searchParams.get("error")
 
-  const handleGoogleSignIn = () => {
-    signIn("google", { callbackUrl: "/" })
-  }
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
-      <Card className="w-full max-w-md shadow-lg">
-        <CardHeader className="text-center space-y-2 pb-2">
-          <div className="mx-auto w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center mb-2">
-            <span className="text-white font-bold text-xl">M</span>
+    <div
+      className="min-h-screen flex items-center justify-center relative overflow-hidden"
+      style={{
+        background:
+          "linear-gradient(135deg, oklch(0.18 0.04 260) 0%, oklch(0.13 0.03 250) 55%, oklch(0.16 0.05 280) 100%)",
+      }}
+    >
+      {/* Background blobs */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div
+          className="absolute -top-40 -right-40 w-80 h-80 rounded-full opacity-20"
+          style={{ background: "radial-gradient(circle, oklch(0.6 0.245 262), transparent)" }}
+        />
+        <div
+          className="absolute -bottom-40 -left-20 w-96 h-96 rounded-full opacity-10"
+          style={{ background: "radial-gradient(circle, oklch(0.5 0.22 280), transparent)" }}
+        />
+      </div>
+
+      <div className="relative w-full max-w-sm mx-4">
+        <div
+          className="rounded-2xl p-8 space-y-7"
+          style={{
+            background: "oklch(1 0 0 / 0.05)",
+            backdropFilter: "blur(24px)",
+            border: "1px solid oklch(1 0 0 / 0.12)",
+            boxShadow: "0 25px 50px oklch(0 0 0 / 0.5), inset 0 1px 0 oklch(1 0 0 / 0.1)",
+          }}
+        >
+          {/* Logo */}
+          <div className="text-center space-y-3">
+            <div
+              className="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center text-white font-bold text-2xl"
+              style={{
+                background: "linear-gradient(135deg, oklch(0.6 0.245 262), oklch(0.5 0.22 280))",
+                boxShadow: "0 8px 24px oklch(0.546 0.245 262 / 0.4)",
+              }}
+            >
+              M
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-white">Eti Shtaingart CRM</h1>
+              <p className="text-sm mt-0.5" style={{ color: "oklch(1 0 0 / 0.5)" }}>
+                מערכת ניהול עסקית
+              </p>
+            </div>
           </div>
-          <CardTitle className="text-2xl font-bold">Mindora CRM</CardTitle>
-          <CardDescription className="text-base">
-            מערכת ניהול פרויקטים ולקוחות
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+
+          {/* Error */}
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 text-sm text-center">
+            <div
+              className="rounded-xl px-4 py-3 text-sm text-center"
+              style={{
+                background: "oklch(0.577 0.245 27 / 0.15)",
+                border: "1px solid oklch(0.577 0.245 27 / 0.3)",
+                color: "oklch(0.85 0.12 27)",
+              }}
+            >
               {error === "AccessDenied"
-                ? "אין לך הרשאה להיכנס למערכת. פנה/י לאתי לקבלת גישה."
-                : "אירעה שגיאה בהתחברות. נסה/י שוב."}
+                ? "אין לך הרשאה להיכנס למערכת"
+                : "אירעה שגיאה. נסי שוב."}
             </div>
           )}
-          <Button
-            onClick={handleGoogleSignIn}
-            variant="outline"
-            className="w-full h-12 text-base font-medium flex items-center gap-3"
+
+          {/* Google Button */}
+          <button
+            onClick={() => signIn("google", { callbackUrl: "/" })}
+            className="w-full flex items-center justify-center gap-3 h-12 rounded-xl font-medium text-sm transition-all duration-150 cursor-pointer"
+            style={{
+              background: "oklch(1 0 0)",
+              color: "oklch(0.2 0 0)",
+              boxShadow: "0 2px 8px oklch(0 0 0 / 0.3)",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-1px)")}
+            onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
           >
-            <svg viewBox="0 0 24 24" className="w-5 h-5" aria-hidden="true">
+            <svg viewBox="0 0 24 24" className="w-5 h-5 shrink-0">
               <path
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
                 fill="#4285F4"
@@ -57,13 +103,14 @@ function LoginContent() {
                 fill="#EA4335"
               />
             </svg>
-            התחבר/י עם Google
-          </Button>
-          <p className="text-xs text-center text-muted-foreground">
-            הכניסה מוגבלת למשתמשים מורשים בלבד
+            המשך עם Google
+          </button>
+
+          <p className="text-xs text-center" style={{ color: "oklch(1 0 0 / 0.3)" }}>
+            גישה מוגבלת למשתמשים מורשים בלבד
           </p>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   )
 }

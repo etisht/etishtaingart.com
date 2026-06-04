@@ -33,7 +33,7 @@ type FormValues = z.infer<typeof schema>
 
 interface ClientFormProps {
   client?: Client | null
-  onSaved: () => void
+  onSaved: (saved: Client) => void
   onClose: () => void
 }
 
@@ -58,12 +58,13 @@ export function ClientForm({ client, onSaved, onClose }: ClientFormProps) {
     try {
       const url = client ? `/api/clients/${client.id}` : "/api/clients"
       const method = client ? "PATCH" : "POST"
-      await fetch(url, {
+      const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(values),
       })
-      onSaved()
+      const saved: Client = await res.json()
+      onSaved(saved)
     } finally {
       setLoading(false)
     }

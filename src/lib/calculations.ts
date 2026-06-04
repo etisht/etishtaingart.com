@@ -1,8 +1,21 @@
 import { toDecimal } from "./utils"
 
-interface PaymentLike { status: string; amount: unknown }
-interface CostLike { isPaid: boolean; amount: unknown; costType: string }
-interface WorkLogLike { totalHours: unknown; performerType: string; calculatedCost?: unknown; supplierPaymentStatus?: string | null }
+interface PaymentLike {
+  status: string
+  amount: number | string | null | undefined
+}
+interface CostLike {
+  isPaid: boolean
+  amount: number | string | null | undefined
+  costType: string
+  billingType?: string | null
+}
+interface WorkLogLike {
+  totalHours: number | string | null | undefined
+  performerType: string
+  calculatedCost?: number | string | null | undefined
+  supplierPaymentStatus?: string | null
+}
 
 export interface ProjectFinancials {
   totalContractValue: number
@@ -22,10 +35,13 @@ export interface ProjectFinancials {
   externalHours: number
   externalCosts: number
   effectiveHourlyRate: number
+  oneTimeCosts: number
+  annualUsageCosts: number
+  salePrice: number
 }
 
 export function calculateProjectFinancials(
-  totalContractValue: unknown,
+  totalContractValue: number | string | null | undefined,
   payments: PaymentLike[],
   costs: CostLike[],
   worklogs: WorkLogLike[]
@@ -35,8 +51,6 @@ export function calculateProjectFinancials(
   const totalPaid = payments
     .filter((p) => p.status === "PAID")
     .reduce((sum, p) => sum + toDecimal(p.amount), 0)
-
-  const balance = contractValue - totalPaid
 
   const totalDevCosts = costs
     .filter((c) => c.costType === "DEVELOPMENT")
@@ -51,11 +65,33 @@ export function calculateProjectFinancials(
     .reduce((sum, c) => sum + toDecimal(c.amount), 0)
 
   const totalCosts = costs.reduce((sum, c) => sum + toDecimal(c.amount), 0)
+
   const paidCosts = costs
     .filter((c) => c.isPaid)
     .reduce((sum, c) => sum + toDecimal(c.amount), 0)
 
-  const expectedProfit = contractValue - totalCosts
+  // Annual value: one-time + recurring costs
+  const oneTimeCosts = costs
+    .filter((c) => !c.billingType || c.billingType === "ONE_TIME")
+    .reduce((sum, c) => sum + toDecimal(c.amount), 0)
+
+  const annualUsageCosts =
+    costs
+      .filter((c) => c.billingType === "MONTHLY")
+      .reduce((sum, c) => sum + toDecimal(c.amount) * 12, 0) +
+    costs
+      .filter((c) => c.billingType === "YEARLY")
+      .reduce((sum, c) => sum + toDecimal(c.amount), 0)
+
+  const salePrice = oneTimeCosts + annualUsageCosts
+
+  // Balance: use salePrice when available, otherwise fall back to contractValue
+  const baseValue = salePrice > 0 ? salePrice : contractValue
+  const balance = baseValue - totalPaid
+
+  // expectedProfit uses salePrice (annualized costs: one-time + monthly×12 + yearly)
+  const annualizedCosts = salePrice > 0 ? salePrice : totalCosts
+  const expectedProfit = contractValue - annualizedCosts
   const actualProfit = totalPaid - paidCosts
   const profitMargin = contractValue > 0 ? (expectedProfit / contractValue) * 100 : 0
 
@@ -93,5 +129,8 @@ export function calculateProjectFinancials(
     externalHours,
     externalCosts,
     effectiveHourlyRate,
+    oneTimeCosts,
+    annualUsageCosts,
+    salePrice,
   }
 }

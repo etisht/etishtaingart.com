@@ -29,6 +29,7 @@ export function TabTimeTracking({ projectId, worklogs: initial, financials, curr
   const [logs, setLogs] = useState(initial)
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [entryMode, setEntryMode] = useState<"range" | "hours">("range")
 
   const form = useForm({
     defaultValues: {
@@ -74,6 +75,7 @@ export function TabTimeTracking({ projectId, worklogs: initial, financials, curr
     setLogs((prev) => [created, ...prev])
     setOpen(false)
     setLoading(false)
+    setEntryMode("range")
     form.reset()
   }
 
@@ -167,26 +169,53 @@ export function TabTimeTracking({ projectId, worklogs: initial, financials, curr
               <FormField control={form.control} name="workDate" render={({ field }) => (
                 <FormItem><FormLabel>תאריך עבודה</FormLabel><FormControl><Input type="date" {...field} /></FormControl></FormItem>
               )} />
-              <div className="grid grid-cols-3 gap-3">
-                <FormField control={form.control} name="startTime" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>שעת התחלה</FormLabel>
-                    <FormControl><Input type="time" {...field} onBlur={autoCalcHours} /></FormControl>
-                  </FormItem>
-                )} />
-                <FormField control={form.control} name="endTime" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>שעת סיום</FormLabel>
-                    <FormControl><Input type="time" {...field} onBlur={autoCalcHours} /></FormControl>
-                  </FormItem>
-                )} />
+              <div className="flex gap-1 p-1 bg-muted rounded-lg w-fit text-sm">
+                <button
+                  type="button"
+                  onClick={() => { setEntryMode("range"); form.setValue("totalHours", "") }}
+                  className={`px-3 py-1 rounded-md transition-colors ${entryMode === "range" ? "bg-white shadow-sm font-medium" : "text-muted-foreground hover:text-foreground"}`}
+                >
+                  התחלה–סיום
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setEntryMode("hours"); form.setValue("startTime", ""); form.setValue("endTime", "") }}
+                  className={`px-3 py-1 rounded-md transition-colors ${entryMode === "hours" ? "bg-white shadow-sm font-medium" : "text-muted-foreground hover:text-foreground"}`}
+                >
+                  שעות בלבד
+                </button>
+              </div>
+              {entryMode === "range" ? (
+                <div className="grid grid-cols-3 gap-3">
+                  <FormField control={form.control} name="startTime" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>שעת התחלה</FormLabel>
+                      <FormControl><Input type="time" {...field} onBlur={autoCalcHours} /></FormControl>
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="endTime" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>שעת סיום</FormLabel>
+                      <FormControl><Input type="time" {...field} onBlur={autoCalcHours} /></FormControl>
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="totalHours" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>שעות מחושבות</FormLabel>
+                      <FormControl><Input type="number" step="0.25" placeholder="אוטומטי" {...field} /></FormControl>
+                    </FormItem>
+                  )} />
+                </div>
+              ) : (
                 <FormField control={form.control} name="totalHours" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>שעות *</FormLabel>
-                    <FormControl><Input type="number" step="0.25" {...field} /></FormControl>
+                    <FormLabel>שעות שהושקעו *</FormLabel>
+                    <FormControl>
+                      <Input type="number" step="0.25" min="0.25" placeholder="למשל: 3.5" className="max-w-40" autoFocus {...field} />
+                    </FormControl>
                   </FormItem>
                 )} />
-              </div>
+              )}
               <div className="grid grid-cols-2 gap-3">
                 <FormField control={form.control} name="performedBy" render={({ field }) => (
                   <FormItem><FormLabel>מבצע העבודה</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>

@@ -44,9 +44,9 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
 
   // Financials without worklogs (worklogs loaded lazily in the time tab)
   const financials = calculateProjectFinancials(
-    project.totalContractValue,
-    project.payments,
-    project.costs,
+    project.totalContractValue ? Number(project.totalContractValue) : null,
+    project.payments as never[],
+    project.costs as never[],
     []
   )
 

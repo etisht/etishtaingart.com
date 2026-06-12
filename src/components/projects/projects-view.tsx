@@ -21,7 +21,8 @@ import { Card, CardContent } from "@/components/ui/card"
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Plus, Search, LayoutList, KanbanSquare, MoreHorizontal, Eye, Trash2 } from "lucide-react"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Plus, Search, LayoutList, KanbanSquare, MoreHorizontal, Eye, Trash2, Pencil } from "lucide-react"
 import { EmptyState } from "@/components/shared/empty-state"
 import { SortableHeader } from "@/components/shared/sortable-header"
 import type { Project, Client, BusinessEntity, ProjectStatus, Cost } from "@/generated/prisma/client"
@@ -32,6 +33,133 @@ type ProjectRow = Project & {
   status: ProjectStatus
   costs: Cost[]
   _count: { milestones: number; tasks: number }
+}
+
+type ContractUpdate = {
+  totalContractValue: number | null
+  contractOneTime: number | null
+  contractRecurring: number | null
+  contractRecurringType: string | null
+}
+
+function InlineContractEdit({
+  project,
+  onUpdate,
+}: {
+  project: ProjectRow
+  onUpdate: (id: string, update: ContractUpdate) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const [oneTime, setOneTime] = useState(project.contractOneTime ? String(Number(project.contractOneTime)) : "")
+  const [recurring, setRecurring] = useState(project.contractRecurring ? String(Number(project.contractRecurring)) : "")
+  const [recurringType, setRecurringType] = useState(project.contractRecurringType ?? "MONTHLY")
+  const [saving, setSaving] = useState(false)
+
+  const liveOneTime = Number(oneTime) || 0
+  const liveRecurring = Number(recurring) || 0
+  const liveAnnual = recurringType === "MONTHLY" ? liveRecurring * 12 : liveRecurring
+  const liveTotal = liveOneTime + liveAnnual
+
+  const handleOpen = (o: boolean) => {
+    if (o) {
+      setOneTime(project.contractOneTime ? String(Number(project.contractOneTime)) : "")
+      setRecurring(project.contractRecurring ? String(Number(project.contractRecurring)) : "")
+      setRecurringType(project.contractRecurringType ?? "MONTHLY")
+    }
+    setOpen(o)
+  }
+
+  const save = async () => {
+    setSaving(true)
+    const update: ContractUpdate = {
+      contractOneTime: oneTime ? Number(oneTime) : null,
+      contractRecurring: recurring ? Number(recurring) : null,
+      contractRecurringType: recurring ? recurringType : null,
+      totalContractValue: liveTotal || null,
+    }
+    await fetch(`/api/projects/${project.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(update),
+    })
+    onUpdate(project.id, update)
+    setSaving(false)
+    setOpen(false)
+  }
+
+  const hasBreakdown = project.contractOneTime || project.contractRecurring
+
+  return (
+    <Popover open={open} onOpenChange={handleOpen}>
+      <PopoverTrigger>
+        <div className="cursor-pointer group flex items-center gap-1.5">
+          <div>
+            {hasBreakdown ? (
+              <>
+                <p className="font-semibold">{formatCurrency(Number(project.totalContractValue ?? 0), project.currency)}/שנה</p>
+                <p className="text-xs text-muted-foreground">
+                  {Number(project.contractOneTime ?? 0) > 0 && `${formatCurrency(Number(project.contractOneTime), project.currency)} חד-פעמי`}
+                  {Number(project.contractOneTime ?? 0) > 0 && Number(project.contractRecurring ?? 0) > 0 && " + "}
+                  {Number(project.contractRecurring ?? 0) > 0 && `${formatCurrency(Number(project.contractRecurring), project.currency)}/${project.contractRecurringType === "MONTHLY" ? "חודש" : "שנה"}`}
+                </p>
+              </>
+            ) : project.totalContractValue ? (
+              <p className="font-semibold">{formatCurrency(Number(project.totalContractValue), project.currency)}</p>
+            ) : (
+              <span className="text-muted-foreground">—</span>
+            )}
+          </div>
+          <Pencil className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 shrink-0" />
+        </div>
+      </PopoverTrigger>
+      <PopoverContent className="w-72 p-3 space-y-3" dir="rtl" align="start">
+        <p className="text-xs font-semibold text-muted-foreground">עריכת שווי חוזה</p>
+        <div className="space-y-2">
+          <div>
+            <label className="text-xs font-medium">חד פעמי</label>
+            <Input
+              type="number"
+              placeholder="0"
+              value={oneTime}
+              onChange={(e) => setOneTime(e.target.value)}
+              className="h-8 mt-1"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-medium">מנוי</label>
+            <div className="flex gap-2 mt-1">
+              <Input
+                type="number"
+                placeholder="0"
+                value={recurring}
+                onChange={(e) => setRecurring(e.target.value)}
+                className="h-8 flex-1"
+              />
+              <Select value={recurringType} onValueChange={(v) => setRecurringType(v ?? "MONTHLY")}>
+                <SelectTrigger className="h-8 w-24">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="MONTHLY">חודשי</SelectItem>
+                  <SelectItem value="YEARLY">שנתי</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+        {liveTotal > 0 && (
+          <div className="flex justify-between text-sm border-t pt-2">
+            <span className="text-muted-foreground">שנתי מחושב:</span>
+            <span className="font-bold">{formatCurrency(liveTotal, project.currency)}</span>
+          </div>
+        )}
+        <div className="flex gap-2 justify-end">
+          <Button variant="outline" size="sm" onClick={() => setOpen(false)}>ביטול</Button>
+          <Button size="sm" onClick={save} disabled={saving}>{saving ? "שומר..." : "שמור"}</Button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  )
 }
 
 function calcSalePrice(costs: Cost[]) {
@@ -101,6 +229,20 @@ export function ProjectsView({ initialProjects, statuses, businessEntities }: Pr
     }
     return list
   }, [projects, filterStatus, filterEntity, search, sortField, sortDir])
+
+  const handleContractUpdate = (projectId: string, update: ContractUpdate) => {
+    setProjects((prev) =>
+      prev.map((p) =>
+        p.id !== projectId ? p : {
+          ...p,
+          totalContractValue: update.totalContractValue as unknown as Project["totalContractValue"],
+          contractOneTime: update.contractOneTime as unknown as Project["contractOneTime"],
+          contractRecurring: update.contractRecurring as unknown as Project["contractRecurring"],
+          contractRecurringType: update.contractRecurringType,
+        }
+      )
+    )
+  }
 
   const handleDelete = async (id: string) => {
     await fetch(`/api/projects/${id}`, { method: "DELETE" })
@@ -237,18 +379,7 @@ export function ProjectsView({ initialProjects, statuses, businessEntities }: Pr
                           <StatusBadge code={p.status.code} />
                         </TableCell>
                         <TableCell className="text-sm">
-                          {p.contractOneTime || p.contractRecurring ? (
-                            <div>
-                              <p className="font-semibold">{formatCurrency(Number(p.totalContractValue ?? 0), p.currency)}/שנה</p>
-                              <p className="text-xs text-muted-foreground">
-                                {Number(p.contractOneTime ?? 0) > 0 && `${formatCurrency(Number(p.contractOneTime), p.currency)} חד-פעמי`}
-                                {Number(p.contractOneTime ?? 0) > 0 && Number(p.contractRecurring ?? 0) > 0 && " + "}
-                                {Number(p.contractRecurring ?? 0) > 0 && `${formatCurrency(Number(p.contractRecurring), p.currency)}/${p.contractRecurringType === "MONTHLY" ? "חודש" : "שנה"}`}
-                              </p>
-                            </div>
-                          ) : p.totalContractValue ? (
-                            formatCurrency(Number(p.totalContractValue), p.currency)
-                          ) : "—"}
+                          <InlineContractEdit project={p} onUpdate={handleContractUpdate} />
                         </TableCell>
                         <TableCell className="text-sm">
                           {sale.total > 0 ? (

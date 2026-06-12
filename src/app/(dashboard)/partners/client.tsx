@@ -40,7 +40,7 @@ export function PartnersClient({ partners: initial }: Props) {
     setOpen(true)
   }
 
-  const onSubmit = async (values: ReturnType<typeof form.getValues>) => {
+  const onSubmit = async (values: { name: string; email: string; phone: string; notes: string }) => {
     setLoading(true)
     const url = editItem ? `/api/partners/${editItem.id}` : "/api/partners"
     const method = editItem ? "PATCH" : "POST"

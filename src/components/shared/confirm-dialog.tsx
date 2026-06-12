@@ -1,5 +1,6 @@
 "use client"
 
+import * as React from "react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,7 +32,7 @@ export function ConfirmDialog({
 }: ConfirmDialogProps) {
   return (
     <AlertDialog>
-      <AlertDialogTrigger asChild>{trigger}</AlertDialogTrigger>
+      <AlertDialogTrigger render={trigger as React.ReactElement} />
       <AlertDialogContent dir="rtl">
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>

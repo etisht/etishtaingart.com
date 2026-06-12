@@ -27,7 +27,7 @@ export function TabTimeTrackingLazy({ projectId, currency }: Props) {
     )
   }
 
-  const financials = calculateProjectFinancials(null, [], [], worklogs)
+  const financials = calculateProjectFinancials(null, [], [], worklogs as never[])
 
   return (
     <TabTimeTracking

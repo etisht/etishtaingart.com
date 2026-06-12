@@ -42,7 +42,7 @@ export function BusinessEntitiesClient({ entities: initial }: Props) {
     setOpen(true)
   }
 
-  const onSubmit = async (values: ReturnType<typeof form.getValues>) => {
+  const onSubmit = async (values: { name: string; type: string; taxId: string; address: string; email: string; notes: string; isActive: boolean }) => {
     setLoading(true)
     const url = editItem ? `/api/business-entities/${editItem.id}` : "/api/business-entities"
     const method = editItem ? "PATCH" : "POST"

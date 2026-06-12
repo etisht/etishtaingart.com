@@ -52,7 +52,7 @@ export function TabTechnical({ projectId, technicalLink: initial }: TabTechnical
     },
   })
 
-  const onSave = async (values: ReturnType<typeof form.getValues>) => {
+  const onSave = async (values: { platform: string; systemUrl: string; hostingUrl: string; hostingProvider: string; dbUrl: string; dbProvider: string; gitUrl: string; repoName: string; productionUrl: string; devUrl: string; integrationNotes: string; technicalNotes: string }) => {
     setLoading(true)
     const res = await fetch(`/api/projects/${projectId}/technical`, {
       method: "PUT",
@@ -80,7 +80,7 @@ export function TabTechnical({ projectId, technicalLink: initial }: TabTechnical
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {fields.map(([key, label]) => {
-            const value = (link as Record<string, string | null>)[key]
+            const value = (link as unknown as Record<string, string | null>)[key]
             const isUrl = urlFields.includes(key)
             return (
               <Card key={key} className="p-3">

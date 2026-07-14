@@ -11,7 +11,11 @@ import {
 import { StatusBadge } from "./status-badge"
 import { ProjectsKanban } from "./projects-kanban"
 import { ProjectForm } from "./project-form"
-import { ConfirmDialog } from "@/components/shared/confirm-dialog"
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+  AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { formatDate, formatCurrency } from "@/lib/utils"
 import { PRIORITY_CONFIG } from "@/lib/constants"
 import {
@@ -191,6 +195,7 @@ export function ProjectsView({ initialProjects, statuses, businessEntities }: Pr
   const [showForm, setShowForm] = useState(false)
   const [sortField, setSortField] = useState<string | null>(null)
   const [sortDir, setSortDir] = useState<"asc" | "desc" | null>(null)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
 
   const handleSort = (field: string) => {
     if (sortField === field) {
@@ -244,7 +249,10 @@ export function ProjectsView({ initialProjects, statuses, businessEntities }: Pr
     )
   }
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async () => {
+    if (!confirmDeleteId) return
+    const id = confirmDeleteId
+    setConfirmDeleteId(null)
     const res = await fetch(`/api/projects/${id}`, { method: "DELETE" })
     if (!res.ok) {
       const err = await res.json().catch(() => ({}))
@@ -412,18 +420,13 @@ export function ProjectsView({ initialProjects, statuses, businessEntities }: Pr
                                 <Eye className="h-4 w-4 ml-2" />
                                 פתח פרויקט
                               </DropdownMenuItem>
-                              <ConfirmDialog
-                                trigger={
-                                  <DropdownMenuItem
-                                    onSelect={(e) => e.preventDefault()}
-                                    className="text-red-600 focus:text-red-600"
-                                  >
-                                    <Trash2 className="h-4 w-4 ml-2" />
-                                    מחיקה
-                                  </DropdownMenuItem>
-                                }
-                                onConfirm={() => handleDelete(p.id)}
-                              />
+                              <DropdownMenuItem
+                                className="text-red-600 focus:text-red-600"
+                                onClick={() => setConfirmDeleteId(p.id)}
+                              >
+                                <Trash2 className="h-4 w-4 ml-2" />
+                                מחיקה
+                              </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
@@ -447,6 +450,19 @@ export function ProjectsView({ initialProjects, statuses, businessEntities }: Pr
           onClose={() => setShowForm(false)}
         />
       )}
+
+      <AlertDialog open={!!confirmDeleteId} onOpenChange={(open) => { if (!open) setConfirmDeleteId(null) }}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>אישור מחיקה</AlertDialogTitle>
+            <AlertDialogDescription>פעולה זו תמחק את הפרויקט לצמיתות ואינה ניתנת לביטול.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>ביטול</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">מחק</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

@@ -20,20 +20,26 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
 }
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = await auth()
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  const { id: projectId } = await params
-  const body = await req.json()
-  const data = schema.parse(body)
-  const userId = (session.user as { id: string }).id
-  const note = await prisma.note.create({
-    data: {
-      ...data,
-      entityType: "PROJECT",
-      entityId: projectId,
-      createdBy: userId,
-      projectId,
-    },
-  })
-  return NextResponse.json(note, { status: 201 })
+  try {
+    const session = await auth()
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    const { id: projectId } = await params
+    const body = await req.json()
+    const data = schema.parse(body)
+    const userId = (session.user as { id: string }).id
+    if (!userId) return NextResponse.json({ error: "Missing user id in session" }, { status: 500 })
+    const note = await prisma.note.create({
+      data: {
+        ...data,
+        entityType: "PROJECT",
+        entityId: projectId,
+        createdBy: userId,
+        projectId,
+      },
+    })
+    return NextResponse.json(note, { status: 201 })
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e)
+    return NextResponse.json({ error: message }, { status: 500 })
+  }
 }

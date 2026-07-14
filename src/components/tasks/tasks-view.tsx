@@ -198,7 +198,7 @@ export function TasksView({ initialTasks, projects }: TasksViewProps) {
             ))}
           </SelectContent>
         </Select>
-        <Select value={filterProject} onValueChange={setFilterProject}>
+        <Select value={filterProject} onValueChange={(v) => setFilterProject(v ?? "ALL")}>
           <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="ALL">כל הפרויקטים</SelectItem>

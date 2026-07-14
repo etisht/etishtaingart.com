@@ -14,11 +14,11 @@ export function TabNotesLazy({ projectId }: Props) {
 
   useEffect(() => {
     Promise.all([
-      fetch(`/api/projects/${projectId}/notes`).then((r) => r.json()),
-      fetch(`/api/projects/${projectId}/activities`).then((r) => r.json()).catch(() => []),
+      fetch(`/api/projects/${projectId}/notes`).then((r) => r.ok ? r.json() : []).catch(() => []),
+      fetch(`/api/projects/${projectId}/activities`).then((r) => r.ok ? r.json() : []).catch(() => []),
     ]).then(([n, a]) => {
-      setNotes(n)
-      setActivities(a)
+      setNotes(Array.isArray(n) ? n : [])
+      setActivities(Array.isArray(a) ? a : [])
     })
   }, [projectId])
 

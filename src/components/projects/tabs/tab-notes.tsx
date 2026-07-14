@@ -27,15 +27,23 @@ export function TabNotes({ projectId, notes: initial, activities }: TabNotesProp
   const handleSubmit = async () => {
     if (!content.trim()) return
     setLoading(true)
-    const res = await fetch(`/api/projects/${projectId}/notes`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content, noteType }),
-    })
-    const created: Note = await res.json()
-    setNotes((prev) => [created, ...prev])
-    setContent("")
-    setLoading(false)
+    try {
+      const res = await fetch(`/api/projects/${projectId}/notes`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content, noteType }),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        alert(`שגיאה בשמירת הערה: ${err?.error ?? res.statusText}`)
+        return
+      }
+      const created: Note = await res.json()
+      setNotes((prev) => [created, ...prev])
+      setContent("")
+    } finally {
+      setLoading(false)
+    }
   }
 
   const ACTION_LABELS: Record<string, string> = {

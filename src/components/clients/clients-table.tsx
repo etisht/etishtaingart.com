@@ -27,11 +27,17 @@ type ClientRow = Client & {
   _count: { contacts: number; projects: number }
 }
 
-interface ClientsTableProps {
-  initialClients: ClientRow[]
+interface BusinessEntity {
+  id: string
+  name: string
 }
 
-export function ClientsTable({ initialClients }: ClientsTableProps) {
+interface ClientsTableProps {
+  initialClients: ClientRow[]
+  businessEntities: BusinessEntity[]
+}
+
+export function ClientsTable({ initialClients, businessEntities }: ClientsTableProps) {
   const router = useRouter()
   const [clients, setClients] = useState(initialClients)
   const [search, setSearch] = useState("")
@@ -219,6 +225,7 @@ export function ClientsTable({ initialClients }: ClientsTableProps) {
       {(showForm || editClient) && (
         <ClientForm
           client={editClient}
+          businessEntities={businessEntities}
           onSaved={handleSaved}
           onClose={() => { setShowForm(false); setEditClient(null) }}
         />

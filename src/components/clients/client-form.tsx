@@ -26,18 +26,25 @@ const schema = z.object({
   website: z.string().optional(),
   status: z.enum(["LEAD", "ACTIVE", "INACTIVE", "CHURNED"]).optional(),
   source: z.string().optional(),
+  businessEntityId: z.string().optional().nullable(),
   notes: z.string().optional(),
 })
 
 type FormValues = z.infer<typeof schema>
 
+interface BusinessEntity {
+  id: string
+  name: string
+}
+
 interface ClientFormProps {
   client?: Client | null
+  businessEntities?: BusinessEntity[]
   onSaved: (saved: Client) => void
   onClose: () => void
 }
 
-export function ClientForm({ client, onSaved, onClose }: ClientFormProps) {
+export function ClientForm({ client, businessEntities = [], onSaved, onClose }: ClientFormProps) {
   const [loading, setLoading] = useState(false)
 
   const form = useForm<FormValues>({
@@ -49,6 +56,7 @@ export function ClientForm({ client, onSaved, onClose }: ClientFormProps) {
       website: client?.website ?? "",
       status: (client?.status as FormValues["status"]) ?? "LEAD",
       source: client?.source ?? "",
+      businessEntityId: client?.businessEntityId ?? "",
       notes: client?.notes ?? "",
     },
   })
@@ -58,10 +66,11 @@ export function ClientForm({ client, onSaved, onClose }: ClientFormProps) {
     try {
       const url = client ? `/api/clients/${client.id}` : "/api/clients"
       const method = client ? "PATCH" : "POST"
+      const body = { ...values, businessEntityId: values.businessEntityId || null }
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
+        body: JSON.stringify(body),
       })
       const saved: Client = await res.json()
       onSaved(saved)
@@ -151,6 +160,23 @@ export function ClientForm({ client, onSaved, onClose }: ClientFormProps) {
                 <FormControl><Input placeholder="https://..." {...field} /></FormControl>
               </FormItem>
             )} />
+
+            {businessEntities.length > 0 && (
+              <FormField control={form.control} name="businessEntityId" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>ישות עסקית</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value ?? ""}>
+                    <FormControl><SelectTrigger><SelectValue placeholder="בחר ישות עסקית" /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      <SelectItem value="">ללא שיוך</SelectItem>
+                      {businessEntities.map((be) => (
+                        <SelectItem key={be.id} value={be.id}>{be.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormItem>
+              )} />
+            )}
 
             <FormField control={form.control} name="notes" render={({ field }) => (
               <FormItem>

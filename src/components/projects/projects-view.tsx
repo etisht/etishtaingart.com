@@ -245,7 +245,12 @@ export function ProjectsView({ initialProjects, statuses, businessEntities }: Pr
   }
 
   const handleDelete = async (id: string) => {
-    await fetch(`/api/projects/${id}`, { method: "DELETE" })
+    const res = await fetch(`/api/projects/${id}`, { method: "DELETE" })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      alert(`שגיאה במחיקת הפרויקט: ${err?.error ?? res.statusText}`)
+      return
+    }
     setProjects((prev) => prev.filter((p) => p.id !== id))
   }
 

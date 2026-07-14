@@ -12,6 +12,7 @@ import {
   Briefcase,
   TrendingUp,
   LogOut,
+  CheckSquare,
 } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { getInitials } from "@/lib/utils"
@@ -23,6 +24,7 @@ const navItems = [
   { href: "/partners",           label: "שותפים",         icon: Users },
   { href: "/business-entities",  label: "ישויות עסקיות",  icon: Briefcase },
   { href: "/financials",         label: "פיננסים",        icon: TrendingUp },
+  { href: "/tasks",              label: "משימות",         icon: CheckSquare },
 ]
 
 interface SidebarProps {

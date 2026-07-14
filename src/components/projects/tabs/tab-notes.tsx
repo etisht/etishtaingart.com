@@ -34,8 +34,8 @@ export function TabNotes({ projectId, notes: initial, activities }: TabNotesProp
         body: JSON.stringify({ content, noteType }),
       })
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        alert(`שגיאה בשמירת הערה: ${err?.error ?? res.statusText}`)
+        const text = await res.text().catch(() => "")
+        alert(`שגיאה בשמירת הערה (${res.status}):\n${text || "אין פרטים"}`)
         return
       }
       const created: Note = await res.json()

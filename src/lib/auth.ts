@@ -9,14 +9,39 @@ const ALLOWED_EMAILS = (process.env.ALLOWED_EMAILS ?? "")
   .filter(Boolean)
 
 export async function getSessionUserId(): Promise<string | null> {
+  // 1. Try the standard session (works in Server Components)
   const session = await auth()
   if (!session) return null
+
   const id = (session.user as { id?: string } | undefined)?.id
   if (id) return id
+
   const email = session.user?.email
-  if (!email) return null
-  const user = await prisma.user.findUnique({ where: { email }, select: { id: true } })
-  return user?.id ?? null
+  if (email) {
+    const user = await prisma.user.findUnique({ where: { email }, select: { id: true } })
+    if (user?.id) return user.id
+  }
+
+  // 2. Fallback: read session token from cookies and look up DB directly
+  // (NextAuth v5 beta doesn't always populate session.user in route handlers)
+  try {
+    const { cookies } = await import("next/headers")
+    const cookieStore = await cookies()
+    const token =
+      cookieStore.get("next-auth.session-token")?.value ??
+      cookieStore.get("__Secure-next-auth.session-token")?.value
+    if (token) {
+      const dbSession = await prisma.session.findUnique({
+        where: { sessionToken: token },
+        select: { userId: true },
+      })
+      if (dbSession?.userId) return dbSession.userId
+    }
+  } catch {
+    // cookies() unavailable outside request context — ignore
+  }
+
+  return null
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({

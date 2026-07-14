@@ -8,6 +8,17 @@ const ALLOWED_EMAILS = (process.env.ALLOWED_EMAILS ?? "")
   .map((e) => e.trim())
   .filter(Boolean)
 
+export async function getSessionUserId(): Promise<string | null> {
+  const session = await auth()
+  if (!session) return null
+  const id = (session.user as { id?: string } | undefined)?.id
+  if (id) return id
+  const email = session.user?.email
+  if (!email) return null
+  const user = await prisma.user.findUnique({ where: { email }, select: { id: true } })
+  return user?.id ?? null
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   providers: [

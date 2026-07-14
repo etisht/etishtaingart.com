@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
+import { getSessionUserId } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { startOfMonth, endOfMonth, parse } from "date-fns"
 
 export async function GET(req: NextRequest) {
-  const session = await auth()
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  const userId = await getSessionUserId()
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const monthParam = req.nextUrl.searchParams.get("month")
   const reference = monthParam ? parse(monthParam, "yyyy-MM", new Date()) : new Date()
@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
 
   const logs = await prisma.workLog.findMany({
     where: {
-      userId: (session.user as { id: string }).id,
+      userId,
       workDate: { gte: from, lte: to },
     },
     include: { project: { include: { client: true } } },

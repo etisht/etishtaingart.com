@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
       entityId: project.id,
       action: "created",
       newValue: { name: project.name },
-      createdBy: (session.user as { id: string }).id,
+      createdBy: (session.user as { id?: string } | undefined)?.id ?? session.user?.email ?? "system",
       projectId: project.id,
     },
   })

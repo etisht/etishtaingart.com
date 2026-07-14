@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
+import { auth, getSessionUserId } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 
@@ -37,8 +37,8 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
 }
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = await auth()
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  const userId = await getSessionUserId()
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   const { id: projectId } = await params
   const body = await req.json()
   const data = schema.parse(body)
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     data: {
       ...data,
       projectId,
-      userId: (session.user as { id: string }).id,
+      userId,
       workDate: new Date(data.workDate),
     },
   })

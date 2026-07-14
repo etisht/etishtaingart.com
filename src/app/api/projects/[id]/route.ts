@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
+import { auth, getSessionUserId } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 
@@ -93,7 +93,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       action,
       oldValue: old ?? undefined,
       newValue: data,
-      createdBy: (session.user as { id: string }).id,
+      createdBy: (session.user as { id?: string } | undefined)?.id ?? session.user?.email ?? "system",
       projectId: id,
     },
   })
